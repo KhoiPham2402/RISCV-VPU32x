@@ -1,0 +1,14 @@
+work/
+work_*/
+transcript
+*.vcd
+*.vstf
+bench/work/
+*.bin
+*.o
+*.elf
+wave_*.vcd
+sim_*.txt
+results/
+sw/benchmarks/lena_gray/lena_dmem_out.hex
+sw/benchmarks/lena_gray/lena_dmem_init.hex
