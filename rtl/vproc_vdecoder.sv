@@ -91,14 +91,16 @@ module vproc_vdecoder #(
     localparam [5:0] VMIN    = 6'b000101;
     localparam [5:0] VMAXU   = 6'b000110;
     localparam [5:0] VMAX    = 6'b000111;
-    localparam [5:0] VREDSUM = 6'b001100;
-    localparam [5:0] VREDMAX = 6'b001101;
-    localparam [5:0] VREDMAXU= 6'b001110;
-    localparam [5:0] VREDMIN = 6'b001111;
-    localparam [5:0] VREDMINU= 6'b010100;
-    localparam [5:0] VREDAND = 6'b011100;
-    localparam [5:0] VREDOR  = 6'b011101;
-    localparam [5:0] VREDXOR = 6'b011110;
+    // RVV 1.0 §14.1: all single-width integer reductions use funct3=010 (OPMVV)
+    // and funct6[5:3]=000; funct6[2:0] selects the operation.
+    localparam [5:0] VREDSUM = 6'b000000;  // funct6[2:0]=000
+    localparam [5:0] VREDAND = 6'b000001;  // funct6[2:0]=001
+    localparam [5:0] VREDOR  = 6'b000010;  // funct6[2:0]=010
+    localparam [5:0] VREDXOR = 6'b000011;  // funct6[2:0]=011
+    localparam [5:0] VREDMINU= 6'b000100;  // funct6[2:0]=100
+    localparam [5:0] VREDMIN = 6'b000101;  // funct6[2:0]=101
+    localparam [5:0] VREDMAXU= 6'b000110;  // funct6[2:0]=110
+    localparam [5:0] VREDMAX = 6'b000111;  // funct6[2:0]=111
 
     // funct3: 000 OPIVV, 011 OPIVI, 100 OPIVX, 111 config
     wire is_vector = (opcode == OPCODE_OPV);
@@ -212,13 +214,10 @@ module vproc_vdecoder #(
             default:                 is_final_masking = 1'b0;
         endcase
     end
+    // Reduction instructions share funct3=010 (OPMVV) and funct6[5:3]=000 in RVV 1.0.
+    // This distinguishes them from vadd/vsub/vmin/vmax (which use OPIVV/OPIVX, funct3≠010).
     always @(*) begin
-        case (funct6)
-            VREDSUM, VREDMAX, VREDMAXU, VREDMIN, VREDMINU, VREDAND, VREDOR, VREDXOR:
-                is_reduction = is_vector && !is_config;
-            default:
-                is_reduction = 1'b0;
-        endcase
+        is_reduction = is_vector && !is_config && (funct3 == 3'b010) && (funct6[5:3] == 3'b000);
     end
     wire is_immediate    = (funct3 == 3'b011);
     // OPIVX (100): vadd.vx, vsub.vx, vsll.vx, etc.

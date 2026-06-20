@@ -1,0 +1,303 @@
+\chapter{Conclusion and Future Work}
+\label{ch:conclusion}
+
+% ===========================================================================
+\section{Summary of Work}
+\label{sec:summary}
+
+This thesis presented the design and implementation of a single-lane \gls{vpu}
+integrated with a five-stage pipelined RISC-V scalar core, targeting \gls{asic} tapeout
+under the \texttt{rv32im\_zicsr\_zve32x\_zvl128b} instruction set architecture with
+VLEN=128 bits.
+
+The hardware hierarchy was designed from scratch in synthesisable SystemVerilog. The
+scalar core implements the RV32IM base \gls{isa} with a five-stage pipeline (IF, ID,
+EX, MEM, WB), EX$\rightarrow$MEM$\rightarrow$WB forwarding, load-use hazard stalling,
+and a dedicated dispatch path for vector instructions through a four-entry instruction
+queue. The VPU is a separate clock-synchronous subsystem with its own nine-state
+\gls{fsm} (\texttt{vproc\_fsm.sv}) that drives a single execution lane containing seven
+functional sub-units: an adder, a multiplier, a shifter, a logic unit, a comparator,
+a min/max unit, and a reduction unit. A 48-bit structured control bus produced by the
+vector decoder (\texttt{vproc\_vdecoder.sv}) passes through the instruction queue and
+drives all downstream units without any re-decoding, providing a clean single-decode
+pipeline architecture.
+
+The VPU supports \gls{sew} widths of 8, 16, and 32 bits, \gls{lmul} values of 1, 2, 4,
+and 8, and the full arithmetic, logical, shift, compare, reduction, and vector
+load/store instruction set of the Zve32x profile. Masked operations are supported with
+per-element granularity; compare instructions produce packed mask results atomically
+through the \texttt{ST\_FINAL\_MASKING} \gls{fsm} state.
+
+A synthesisable UART peripheral mapped at \texttt{0xFF000000} enables real-data
+end-to-end testing. Bare-metal firmware in RISC-V assembly implements the ITU-R BT.601
+RGB-to-grayscale conversion algorithm using \texttt{vmulhu.vx} at SEW=8, exploiting
+the upper-byte extraction semantics to implement the fixed-point multiply-and-divide
+in a single vector instruction per colour channel. The firmware was compiled using the
+\texttt{riscv64-unknown-elf-gcc} toolchain under MSYS2 and loaded into the IMEM model
+via the \texttt{elf2hex\_lines.py} converter.
+
+All modules were verified in ModelSim. The instruction regression testbench
+(\texttt{tb\_vproc\_all\_instr.sv}) achieved 172/172 directed tests passing. System
+integration was verified by the \texttt{tb\_uart\_echo.sv} testbench (16/16 pixel
+comparisons passing, ACK \texttt{0xAA} confirmed) and by \texttt{tb\_uart\_lena\_assert.sv}
+(16384/16384 Lena image pixels matching the BT.601 reference, all eleven assertion
+categories passing). The design was synthesised on the Intel Cyclone~V DE10-Standard
+board, consuming 10,438 \glspl{alm} and achieving an $F_\text{max}$ of 47.18~MHz in
+the fast-corner timing model.
+
+% ===========================================================================
+\section{Contributions}
+\label{sec:contributions_ch7}
+
+The following six original contributions are claimed by this work:
+
+\begin{enumerate}[label=\arabic*.]
+
+  \item \textbf{Complete Zve32x-compliant RTL implementation in SystemVerilog.}
+    A full implementation of the RVV Zve32x instruction subset was delivered in
+    synthesisable SystemVerilog. All modules comply with the ASIC design rules:
+    synchronous active-low reset throughout, no \texttt{initial} blocks or
+    \texttt{\$display} in synthesisable paths, no combinational latches, and all
+    widths parameterised as functions of the VLEN, SEW, and LMUL parameters.
+    This work is, to the best of the author's knowledge, the first publicly documented
+    single-lane Zve32x RTL implementation that explicitly documents tapeout-viability
+    constraints and verification results.
+
+  \item \textbf{Pipelined scalar core with VPU dispatch stall and FIFO-based decoupling.}
+    A five-stage RV32IM pipeline was designed with two independent hazard mechanisms:
+    a data-hazard forwarding network for scalar RAW dependencies, and an occupancy-based
+    stall that halts the scalar IF/ID stages when the VPU instruction queue is full. The
+    four-entry synchronous \gls{fifo} decouples the scalar and vector pipelines, allowing
+    scalar instructions to advance while the VPU executes multi-cycle vector operations.
+
+  \item \textbf{Per-element serial reduction with busy-based FSM handshake.}
+    The \texttt{vproc\_reduction} module was redesigned from a combinational adder tree
+    to a single-adder serial accumulator. Each element is added to the running accumulator
+    on successive clock cycles, eliminating the $O(\log_2 N)$-deep carry chain. This
+    redesign improved the design's $F_\text{max}$ from 16.44~MHz to 47.18~MHz (a
+    $2.87\times$ improvement) and reduced the ALM count from 13,998 to 10,438 (a 25\%
+    reduction). The \texttt{reduction\_busy} signal provides a synchronous handshake to
+    the FSM so that the result-write cycle is correctly timed without additional dead cycles.
+
+  \item \textbf{Comprehensive 172-test directed verification suite.}
+    The \texttt{tb\_vproc\_all\_instr.sv} testbench provides 172 directed test cases
+    covering every opcode category in the Zve32x subset: integer ALU in all three
+    operand forms (VV, VX, VI), reverse subtract, logic, shifts, min/max with signed
+    and unsigned comparisons, packed-mask compare, all four VMULH variants in both VV
+    and VX forms, widening operations (six variants), LMUL=2 multi-register group
+    operations, and all five reduction operations. This suite provides a regression
+    gate that can be re-run after any \gls{rtl} modification to confirm that no
+    regression was introduced.
+
+  \item \textbf{End-to-end UART testbench with pixel-accurate BT.601 verification.}
+    The \texttt{tb\_uart\_echo.sv} and \texttt{tb\_uart\_lena\_assert.sv} testbenches
+    exercise the full hardware stack at pin level, driving a modelled UART receiver and
+    observing the UART transmitter. The system is verified against a reference BT.601
+    implementation in simulation; 100\% accuracy (zero error on all 16384 pixels of
+    the Lena test image) is achieved, demonstrating that the fixed-point coefficient
+    approximation is exact for all integer pixel values in [0, 255].
+
+  \item \textbf{FPGA prototype on the DE10-Standard achieving 47.18~MHz at 10,438 ALMs.}
+    The full design was synthesised, placed, and routed on the Intel Cyclone~V
+    5CSXFC6D6F31C6 device. The achieved $F_\text{max}$ of 47.18~MHz, while below
+    the 50~MHz target in the slow-corner model, represents a substantial improvement
+    over the initial 16.44~MHz after the serial reduction redesign. The prototype
+    validates that the design is fully synthesisable with modern FPGA tooling and
+    provides a concrete area reference point (10,438 ALMs) for \gls{asic} cell-count
+    estimation.
+
+\end{enumerate}
+
+% ===========================================================================
+\section{Limitations}
+\label{sec:limitations_ch7}
+
+Several limitations remain in the current implementation:
+
+\begin{description}
+
+  \item[Slide instructions not implemented.]
+    The \texttt{vslide1up.vx} and \texttt{vslide1down.vx} instructions, which shift
+    a vector register's elements up or down by one position and insert a scalar value,
+    are part of the Zve32x specification but have not been decoded or executed.
+    These instructions are required for several important algorithms, including FIR
+    filters using the overlap-save technique and certain recurrence computations.
+
+  \item[Behavioral SRAM model.]
+    The data memory is modelled as a \texttt{logic} array inside \texttt{dmem\_sync.sv}.
+    While this is functionally correct in simulation and synthesises to FPGA block RAM,
+    it is not a tapeout-ready SRAM macro. An ASIC implementation requires a standard-cell
+    SRAM macro with defined access time, power ports, and boundary conditions.
+
+  \item[Slow-corner timing violation.]
+    The design fails to meet the 50~MHz target in the Cyclone~V slow-corner model by
+    4.436~ns. The critical path is the 32-bit carry chain in the scalar ALU.
+    While the design is functionally correct (the fast-corner model passes), an ASIC
+    tapeout at 50~MHz would require this path to be closed under the worst-case
+    process, voltage, and temperature corner.
+
+  \item[No formal verification.]
+    All verification was performed using directed simulation in ModelSim. No bounded
+    model checking, property checking, or formal equivalence checking between the RTL
+    and any reference model has been performed. Formal methods would provide stronger
+    correctness guarantees, particularly for the decode logic and the CSR update path.
+
+  \item[Asynchronous reset in lsu.sv.]
+    The scalar load/store unit (\texttt{rtl/riscv/lsu.sv}) was identified as containing
+    at least one register with an asynchronous reset path. This is inconsistent with
+    the synchronous active-low reset policy applied to all other modules and must be
+    corrected before tapeout.
+
+  \item[Single-lane execution only.]
+    The design achieves a peak throughput of one element per clock cycle. Multi-lane
+    execution (two or four lanes operating in parallel) would proportionally increase
+    throughput at the cost of additional area, but the current architecture was
+    intentionally constrained to a single lane to minimise complexity during the
+    initial implementation.
+
+\end{description}
+
+% ===========================================================================
+\section{Future Work}
+\label{sec:future}
+
+The current design provides a solid, verified foundation for further development
+along several axes.
+
+\subsection{ASIC Synthesis and Physical Design}
+
+The most direct continuation of this work is completing the \gls{asic} tapeout flow:
+
+\begin{itemize}
+  \item \textbf{Logic synthesis with Yosys or Synopsys Design Compiler.}
+    Running the RTL through an open-source synthesis tool (Yosys with the
+    \texttt{synth\_xilinx} or \texttt{synth} target) would provide a gate-level
+    netlist and a technology-mapped area estimate that is more accurate than the
+    FPGA ALM count. A commercial tool such as Synopsys Design Compiler with the
+    target PDK would provide the production-quality netlist.
+  \item \textbf{Static timing analysis at target frequency.}
+    After synthesis, PrimeTime or OpenSTA should be run with a complete set of
+    timing constraints covering all clock domains, I/O delays, and multicycle paths.
+    The scalar ALU carry chain identified in this work would be the first path to
+    address.
+  \item \textbf{SRAM macro replacement.}
+    The behavioral DMEM model should be replaced by a standard-cell SRAM macro
+    (such as those generated by OpenRAM for the SkyWater SKY130 PDK or
+    GlobalFoundries GF180MCU PDK). The dual-port access pattern of \texttt{dmem\_sync}
+    requires a two-port or pseudo-dual-port SRAM with one read and one write port.
+  \item \textbf{Physical design (floorplan, P\&R, DRC, LVS).}
+    With a synthesis-clean netlist and SRAM macros, the design can be taken through
+    OpenROAD or Cadence Innovus for floorplanning, placement, clock tree synthesis,
+    routing, design-rule checking, and layout-versus-schematic verification.
+    A final GDSII file suitable for multi-project wafer submission would be the
+    deliverable.
+\end{itemize}
+
+\subsection{Formal and Property-Based Verification}
+
+The simulation-based approach used in this thesis provides high confidence but cannot
+prove the absence of bugs in unexplored corner cases. Future work should include:
+
+\begin{itemize}
+  \item \textbf{Bounded model checking} of the VPU \gls{fsm} to prove that no
+        invalid state is reachable from reset and that all \texttt{busy}/\texttt{done}
+        handshakes terminate within a bounded number of cycles.
+  \item \textbf{Formal equivalence checking} between the RTL and the gate-level
+        netlist to confirm that synthesis did not introduce any logical transformation.
+  \item \textbf{Property-based verification} of the decoder, proving that every
+        valid Zve32x encoding produces a unique, well-formed control word and that
+        no two distinct encodings produce the same control word.
+\end{itemize}
+
+\subsection{Instruction Set Extensions}
+
+The following instructions are within the Zve32x or closely related profiles and
+would broaden the application coverage of the processor:
+
+\begin{itemize}
+  \item \textbf{Slide instructions} (\texttt{vslide1up.vx}, \texttt{vslide1down.vx},
+        \texttt{vslideup.vx}, \texttt{vslidedown.vx}): required for prefix-sum,
+        FIR, and IIR filter kernels. The implementation requires a barrel-shift network
+        in the VRF read path.
+  \item \textbf{Gather/scatter} (\texttt{vrgather.vv}, \texttt{vrgatherei16.vv}):
+        enables permutation-based algorithms and look-up-table acceleration.
+  \item \textbf{Segment load/store} (\texttt{vlseg}, \texttt{vsseg}): needed for
+        interleaved (AoS) memory layouts such as packed RGB image data.
+  \item \textbf{Single-width floating-point} (RVV with Zve32f extension): adding
+        a 32-bit IEEE 754 floating-point datapath to the execution lane would support
+        inference workloads that use \texttt{float32} activations.
+\end{itemize}
+
+\subsection{Multi-Lane Scaling}
+
+The single-lane architecture of this design processes one element per cycle. Extending
+to $L$ parallel lanes would process $L$ elements per cycle, proportionally increasing
+throughput at the cost of $L\times$ the datapath area. A clean multi-lane extension
+would require:
+
+\begin{itemize}
+  \item Partitioning the \gls{vrf} across $L$ banks so that each lane has a dedicated
+        read/write port. With VLEN=128 and SEW=32, a single register group contains
+        four elements, so four lanes is a natural choice that keeps each lane's bank
+        width at 32 bits.
+  \item Distributing the element-to-lane mapping consistently across all sub-units.
+  \item Extending the \gls{vlsu} to generate $L$ DMEM requests per cycle.
+  \item Updating the reduction unit to perform an $L$-input partial reduction across
+        lanes before feeding the serial accumulator.
+\end{itemize}
+
+An implementation using two lanes would double throughput for most arithmetic
+instructions and achieve approximately 4.2 cycles per pixel for the BT.601 kernel at
+SEW=8.
+
+\subsection{Out-of-Order VPU Execution with Scoreboard}
+
+The current design stalls the scalar pipeline whenever the VPU instruction queue is
+full or when a \texttt{vsetvli} result is pending. An out-of-order capability would
+allow the scalar core to continue dispatching subsequent scalar instructions past a
+pending vector stall, using a scoreboard to track which scalar registers are in use
+as implicit VPU operands. This is particularly beneficial for scalar code that follows
+a vector store instruction, which currently stalls for 16 or more cycles at SEW=8.
+
+\subsection{Clock Gating and Power Optimisation}
+
+The VRF data-path registers are the dominant source of dynamic power in the design.
+Inserting clock-gating cells controlled by the element-enable signals (\texttt{vrf\_we})
+would suppress switching in unused lanes during masked operations and during scalar
+instructions when the VPU is idle. The tapeout checklist in \texttt{CLAUDE.md}
+identifies this as a required item before final submission.
+
+% ===========================================================================
+\section{Closing Remarks}
+\label{sec:closing}
+
+This project set out to produce a standards-compliant RISC-V vector processor that is
+not merely functionally correct in simulation but is also designed to the disciplined
+engineering standard required for eventual \gls{asic} tapeout. The completed design
+demonstrates that both goals can be achieved within the constraints of a single-person
+academic project: full Zve32x instruction coverage, 172/172 regression passing,
+pixel-accurate image processing verification, and a working FPGA prototype.
+
+The central technical lesson is that timing closure and area efficiency for a vector
+processor depend critically on the implementation of the reduction unit. A na\"ive
+combinational tree appears straightforward but produces a combinational path whose
+depth grows linearly with the vector length, making it incompatible with any practical
+clock frequency target. The serial accumulator pattern — processing one element per
+cycle under \gls{fsm} control — not only solves the timing problem but also reduces
+area, because the synthesiser instantiates a single adder rather than a tree of
+adders. This observation is transferable to any SIMD or vector design that includes
+a reduction operation.
+
+The open-source RVV ecosystem has matured considerably over the past three years.
+Freely available toolchains, reference simulators (Spike), and the detailed RVV 1.0
+specification provide an unusually solid foundation for academic hardware development.
+The \texttt{rv32im\_zicsr\_zve32x\_zvl128b} profile is a well-scoped minimum viable
+vector ISA that can be implemented and verified in a thesis-scale project while still
+being directly useful for embedded machine-learning inference and image processing.
+
+The work documented in this thesis provides a complete, well-verified starting point
+for a future multi-project wafer submission. With the SRAM model replacement, the
+scalar ALU timing fix, and the missing slide instructions completed, the design would
+be ready for synthesis under an open-source PDK and subsequent physical design closure.
+That tapeout remains the long-term goal, and this thesis is one rigorous step along
+that path.

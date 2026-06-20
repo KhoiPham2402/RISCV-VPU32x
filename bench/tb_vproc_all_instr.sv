@@ -26,13 +26,17 @@ module tb_vproc_all_instr;
     localparam [5:0] VAND    = 6'h09;
     localparam [5:0] VOR     = 6'h0A;
     localparam [5:0] VXOR    = 6'h0B;
-    localparam [5:0] VREDSUM = 6'h0C;
-    localparam [5:0] VREDMAX = 6'h0D;
-    localparam [5:0] VREDMAXU= 6'h0E;
-    localparam [5:0] VREDMIN = 6'h0F;
+    // RVV 1.0 §14.1: reductions use funct3=010 (OPMVV) + funct6[5:3]=000
+    localparam [5:0] VREDSUM = 6'h00;  // funct6[2:0]=000
+    localparam [5:0] VREDAND = 6'h01;  // funct6[2:0]=001
+    localparam [5:0] VREDOR  = 6'h02;  // funct6[2:0]=010
+    localparam [5:0] VREDXOR = 6'h03;  // funct6[2:0]=011
+    localparam [5:0] VREDMINU= 6'h04;  // funct6[2:0]=100
+    localparam [5:0] VREDMIN = 6'h05;  // funct6[2:0]=101
+    localparam [5:0] VREDMAXU= 6'h06;  // funct6[2:0]=110
+    localparam [5:0] VREDMAX = 6'h07;  // funct6[2:0]=111
     localparam [5:0] VSRL    = 6'h10;
     localparam [5:0] VSRA    = 6'h12;
-    localparam [5:0] VREDMINU= 6'h14;
     localparam [5:0] VSLL    = 6'h15;
     localparam [5:0] VCMPEQ  = 6'h18;
     localparam [5:0] VCMPLTU = 6'h1A;
@@ -295,10 +299,11 @@ module tb_vproc_all_instr;
     endtask
 
     // Reduction VV — result written only to vd[lane0]
+    // RVV 1.0: reductions use OPMVV (funct3=010), vs1 provides initial accumulator value
     task automatic run_red(input [5:0] f6, input int vd, vs2, vs1,
                            input [31:0] exp_l0);
         begin
-            issue(build_opv(f6,1'b1,3'b000,vs1[4:0],vs2[4:0],vd[4:0]),32'd0,32'd0);
+            issue(build_opv(f6,1'b1,3'b010,vs1[4:0],vs2[4:0],vd[4:0]),32'd0,32'd0);
             wait_done();
             check_u32($sformatf("RED f6=%02h vd=v%0d L0",f6,vd), vrf_word(0,vd), exp_l0);
         end

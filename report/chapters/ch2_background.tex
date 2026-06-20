@@ -1,0 +1,411 @@
+\chapter{Background and Related Work}
+\label{ch:background}
+
+\section{RISC-V Instruction Set Architecture}
+\label{sec:riscv-isa}
+
+\subsection{History and Design Philosophy}
+
+The RISC-V project began at the University of California, Berkeley in 2010 under
+the direction of Krste Asanović and David Patterson, motivated by the observation
+that every major instruction set architecture either carried decades of backwards-
+compatibility baggage (x86, ARM) or was encumbered by licensing terms that inhibited
+academic and open-source development \cite{patterson2020risc}. The design team
+deliberately started from a clean slate, taking the well-understood principles of
+reduced instruction set computing and applying them with the benefit of thirty years
+of hindsight.
+
+The central tenets of the RISC-V philosophy are modularity, simplicity, and openness.
+Rather than defining a single monolithic instruction set, RISC-V specifies a small
+mandatory base ISA (RV32I or RV64I) and a collection of standard extensions that can
+be combined selectively. A chip targeting IoT sensor fusion needs only RV32I and
+perhaps the C (compressed) extension; a high-performance server processor adds the M,
+A, F, D, and V extensions. The letter ``G'' denotes the general-purpose combination
+\texttt{IMAFD}. This modularity allows silicon area to be allocated precisely to the
+features that a given application domain demands.
+
+The open-source nature of RISC-V distinguishes it from all commercial alternatives.
+The specifications are published under Creative Commons licensing, the reference
+implementations (Rocket, BOOM, CVA6) are available under BSD or Apache licenses, and
+a rich ecosystem of open-source tools --- GCC, LLVM, Spike ISA simulator, Verilator,
+and ModelSim flows --- eliminates the toolchain cost that historically made ASIC design
+prohibitive for academic groups.
+
+\subsection{Base ISA: RV32I}
+
+RV32I defines thirty-two 32-bit general-purpose integer registers (\texttt{x0}--\texttt{x31},
+where \texttt{x0} is hardwired to zero), a 32-bit program counter, and a load/store
+memory architecture in which all arithmetic operates on registers and memory is
+accessed exclusively through explicit load and store instructions \cite{riscv-spec-2019}.
+The instruction encoding is fixed at 32 bits (the C extension provides optional 16-bit
+compressed forms), and all instructions are aligned on 4-byte boundaries in the
+standard configuration.
+
+The RV32I instruction formats --- R, I, S, B, U, and J --- are designed to keep the
+source and destination register fields at fixed bit positions (bits [11:7] for \texttt{rd},
+[19:15] for \texttt{rs1}, [24:20] for \texttt{rs2}) regardless of format, reducing
+decoder complexity. The opcode occupies bits [6:0] and the \texttt{funct3}/\texttt{funct6}/\texttt{funct7}
+fields further disambiguate within an opcode class.
+
+The base integer instruction set covers arithmetic (\texttt{ADD}, \texttt{SUB},
+\texttt{ADDI}), logical (\texttt{AND}, \texttt{OR}, \texttt{XOR} and their immediate
+forms), shift (\texttt{SLL}, \texttt{SRL}, \texttt{SRA}), comparison (\texttt{SLT},
+\texttt{SLTU}), branch (\texttt{BEQ}, \texttt{BNE}, \texttt{BLT}, \texttt{BGE},
+\texttt{BLTU}, \texttt{BGEU}), unconditional jump (\texttt{JAL}, \texttt{JALR}),
+and memory access (\texttt{LW}, \texttt{LH}, \texttt{LB}, \texttt{LHU}, \texttt{LBU},
+\texttt{SW}, \texttt{SH}, \texttt{SB}).
+
+\subsection{M Extension: Integer Multiplication and Division}
+
+The M extension adds hardware multiply and divide instructions to RV32I
+\cite{riscv-spec-2019}. \texttt{MUL} produces the lower 32 bits of the product;
+\texttt{MULH}, \texttt{MULHU}, and \texttt{MULHSU} produce the upper 32 bits for
+signed$\times$signed, unsigned$\times$unsigned, and signed$\times$unsigned cases
+respectively. \texttt{DIV}, \texttt{DIVU}, \texttt{REM}, and \texttt{REMU} perform
+integer division and remainder with signed and unsigned variants. Without the M
+extension, multiplication must be emulated in software using shift-and-add sequences,
+which is impractical for the matrix multiplication and convolution kernels that motivate
+this design.
+
+\subsection{Privileged Specification and CSRs}
+
+The Zicsr extension defines a uniform mechanism for accessing \glspl{csr} using the
+\texttt{CSRRW}, \texttt{CSRRS}, \texttt{CSRRC}, and their immediate variants
+(\texttt{CSRRWI}, \texttt{CSRRSI}, \texttt{CSRRCI}) \cite{riscv-spec-2019}. CSR
+addresses occupy a 12-bit field in the instruction encoding (\texttt{inst[31:20]}),
+giving a 4096-entry address space partitioned by privilege level and read/write
+access. The vector extension uses this mechanism to expose three user-level CSRs:
+\texttt{vl} (current vector length, address \texttt{0xC20}), \texttt{vtype} (vector
+type register encoding SEW, LMUL, and tail/mask policy, address \texttt{0xC21}), and
+\texttt{vlenb} (vector register length in bytes, read-only constant, address \texttt{0xC22}).
+
+\section{Vector Processing Fundamentals}
+\label{sec:vector-fundamentals}
+
+\subsection{Flynn's Taxonomy and Parallelism Classes}
+
+Flynn's taxonomy \cite{harris2012digital} classifies computer architectures by the
+number of instruction streams and data streams they operate on simultaneously:
+Single Instruction Single Data (SISD) describes a classical scalar processor; Multiple
+Instruction Multiple Data (MIMD) describes a multi-core system; Single Instruction
+Multiple Data (SIMD) describes the class that encompasses both vector processors and
+modern packed-SIMD extensions.
+
+Within the \gls{simd} class, a useful distinction separates \emph{true vector} processors
+from \emph{packed SIMD} designs. In packed SIMD (MMX, SSE, AVX, NEON), the vector
+register width is fixed in the \gls{isa} and the programmer explicitly handles loop
+tails when the data set length is not a multiple of the fixed vector width. In a true
+vector processor, the \gls{isa} is parameterised by a hardware-configured vector length
+that the application queries at runtime using a configuration instruction; the hardware
+handles tail elements automatically. RISC-V RVV follows the true vector model.
+
+\subsection{Key Vector Concepts}
+
+\paragraph{Vector Length and VLEN.}
+\gls{vlen} is the number of bits in each vector register. For a given VLEN and SEW
+(the number of bits per element), the number of elements per register is
+$\text{VLEN} / \text{SEW}$. This thesis fixes VLEN=128 bits, so a register holds
+sixteen 8-bit elements, eight 16-bit elements, or four 32-bit elements when LMUL=1.
+
+\paragraph{Standard Element Width (SEW).}
+\gls{sew} specifies the data type width for a vector instruction. The RVV specification
+encodes SEW in a three-bit field \texttt{vsew[2:0]} within the \texttt{vtype} CSR.
+Zve32x mandates support for SEW=8, 16, and 32 bits.
+
+\paragraph{Length Multiplier (LMUL).}
+\gls{lmul} groups consecutive vector registers into a single logical register, scaling
+the effective vector length by the multiplier. LMUL=1 is the base case; LMUL=2 pairs
+two registers, doubling the number of elements that a single instruction operates on.
+LMUL=4 and LMUL=8 continue the progression. Fractional LMUL values (LMUL=1/2, 1/4,
+1/8) use only a fraction of a register and are defined in the full V extension but not
+required by Zve32x. The maximum vector length for a given SEW and LMUL is:
+\begin{equation}
+  \text{VLMAX} = \left\lfloor \frac{\text{LMUL} \times \text{VLEN}}{\text{SEW}} \right\rfloor
+  \label{eq:vlmax}
+\end{equation}
+
+\paragraph{Masking.}
+RVV provides a per-element masking mechanism. When the \texttt{vm} bit in an instruction
+is 0, each element operation is conditioned on the corresponding bit of vector register
+\texttt{v0}. Elements whose mask bit is 0 are either left unchanged (mask-undisturbed
+policy) or written with all-ones (mask-agnostic policy), depending on the \texttt{vma}
+bit in \texttt{vtype}. Masking enables vectorised control flow: a conditional operation
+on a subset of elements can be expressed as a comparison followed by a masked arithmetic
+instruction without branching.
+
+\paragraph{Tail Behaviour.}
+When vl is set to a value less than VLMAX, the elements from index vl to VLMAX-1
+are ``tail'' elements. The tail-agnostic (\texttt{ta}) bit in vtype controls whether
+tail elements are left unchanged or overwritten with all-ones. This thesis implements
+tail-agnostic behaviour, writing zero to tail positions in the register file.
+
+\subsection{Performance Advantages of Vector Processing}
+
+The performance advantage of vector processing over scalar processing for data-parallel
+workloads stems from three sources. First, instruction-fetch overhead is amortised:
+a single \texttt{vadd.vv} instruction replaces $N$ scalar \texttt{add} instructions,
+reducing instruction cache pressure proportionally. Second, branch prediction overhead
+is eliminated because the innermost loop over elements is implicit in the vector length
+counter inside the hardware. Third, the hardware can pipeline element operations in
+a deeper pipeline than a scalar functional unit, because the latency can be hidden
+behind the processing of subsequent elements within the same vector instruction.
+
+For a concrete estimate, a BT.601 grayscale conversion applied to a 128$\times$128
+image requires 16384 multiply-accumulate operations per colour channel. A scalar RV32I
+core at 50~MHz completes this in approximately 98304 cycles (6 instructions per pixel).
+A vector core with VLEN=128 and SEW=8 processes 16 elements per instruction; the same
+workload requires only 1024 \texttt{vmulhu.vx} + \texttt{vredsum.vs} passes, a
+$16\times$ reduction in instruction count assuming the bottleneck is arithmetic
+throughput.
+
+\section{RISC-V Vector Extension (RVV)}
+\label{sec:rvv}
+
+\subsection{Overview and Design Goals}
+
+The RISC-V Vector Extension, version 1.0, was ratified by RISC-V International in
+2021 \cite{rvv-spec-1-0}. Its primary design goal is to provide a single binary-compatible
+vector programming model across a wide range of hardware implementations, from
+microcontrollers with VLEN=64 to server processors with VLEN=4096. The key architectural
+mechanism enabling this is the \texttt{vsetvl}/\texttt{vsetvli}/\texttt{vsetivli}
+instruction family, which configures the hardware at runtime and returns the actual
+vector length that the hardware can process in one instruction, allowing software to
+loop without prior knowledge of the hardware's capabilities.
+
+\subsection{Vector CSRs}
+
+Three CSRs define the current vector execution context:
+
+\begin{itemize}
+  \item \textbf{vtype} (address \texttt{0xC21}): encodes \texttt{vill} (illegal vtype
+        flag), \texttt{vma} (mask-agnostic), \texttt{vta} (tail-agnostic),
+        \texttt{vsew[2:0]}, and \texttt{vlmul[2:0]}.
+  \item \textbf{vl} (address \texttt{0xC20}): holds the current vector length as set
+        by the most recent \texttt{vsetvl*} instruction.
+  \item \textbf{vlenb} (address \texttt{0xC22}): a read-only constant equal to
+        $\text{VLEN}/8$, i.e., the number of bytes in one vector register.
+        For VLEN=128, \texttt{vlenb}=16.
+\end{itemize}
+
+\subsection{Vector Register File}
+
+RVV defines 32 vector registers, \texttt{v0}--\texttt{v31}, each VLEN bits wide.
+Register \texttt{v0} has the special role of the mask register when \texttt{vm=0}.
+With LMUL>1, groups of registers are treated as a single logical register; for example,
+LMUL=4 means that \texttt{v0}, \texttt{v4}, \texttt{v8}, $\ldots$ are the accessible
+register group addresses, and each group contains four physical VLEN-bit registers
+holding $4 \times \text{VLMAX}$ elements.
+
+\subsection{Instruction Categories}
+
+RVV instructions are categorised by their operand encoding:
+
+\begin{itemize}
+  \item \textbf{OPIVV} (\texttt{funct3=000}): vector--vector operations (both operands
+        from the vector register file).
+  \item \textbf{OPIVX} (\texttt{funct3=100}): vector--scalar operations (one operand
+        from a scalar integer register).
+  \item \textbf{OPIVI} (\texttt{funct3=011}): vector--immediate operations (one operand
+        is a 5-bit sign-extended immediate).
+  \item \textbf{OPMVV} (\texttt{funct3=010}): multiply-add and integer reduction
+        vector--vector operations.
+  \item \textbf{OPMVX} (\texttt{funct3=110}): multiply-add vector--scalar operations.
+  \item \textbf{OPFVV/OPFVF}: floating-point categories (not implemented in Zve32x).
+  \item \textbf{Load/Store}: unit-stride, strided, and indexed variants (Zve32x
+        requires only unit-stride).
+\end{itemize}
+
+\subsection{Zve32x Subset}
+
+The Zve32x profile is the minimum embedded vector extension targeting integer-only
+workloads at 32-bit maximum element width \cite{rvv-spec-1-0}. It requires:
+VLEN$\geq$32, SEW support for 8, 16, and 32 bits, all integer arithmetic and logical
+operations with VV/VX/VI encodings, integer comparison and mask operations, reduction
+operations (\texttt{vredsum}, \texttt{vredmax}, \texttt{vredmin} and unsigned variants),
+and unit-stride vector load/store (\texttt{vle8.v}, \texttt{vle16.v}, \texttt{vle32.v},
+and matching \texttt{vse*}). It explicitly does not require floating-point operations,
+strided or indexed memory accesses, or VLEN exceeding 32 bits. This makes it the
+natural profile for a first-generation tapeout targeting embedded workloads.
+
+\section{ASIC Design Methodology}
+\label{sec:asic-methodology}
+
+\subsection{RTL Design Phase}
+
+The \gls{rtl} design phase produces synthesisable SystemVerilog (or VHDL) that
+describes the logical behaviour of the circuit at the level of register transfers and
+combinational functions \cite{harris2012digital, weste2010cmos}. Critical rules that
+distinguish synthesisable from simulation-only RTL include:
+
+\begin{itemize}
+  \item \textbf{No \texttt{initial} blocks.} Initial blocks are interpreted by
+        simulators to set power-on state but are not supported by synthesis tools.
+        All registers must be initialised through reset logic.
+  \item \textbf{Synchronous, active-low reset.} A single active-low \texttt{rst\_n}
+        signal, sampled on the rising clock edge, is the industry standard for ASIC
+        reset. Asynchronous resets complicate static timing analysis because they
+        can produce glitches during assertion and deassertion.
+  \item \textbf{No latches.} An \texttt{always\_comb} block that does not assign
+        all outputs on all code paths infers a level-sensitive latch. Latches cause
+        timing violations and are eliminated by ensuring every \texttt{always\_comb}
+        block has a complete set of default assignments before any conditional logic.
+  \item \textbf{No simulation tasks in synthesis paths.} \texttt{\$display},
+        \texttt{\$time}, \texttt{\$monitor}, and similar system tasks are
+        simulation-only; they must be confined to testbenches.
+  \item \textbf{Parameterised widths.} Hardcoding bit widths to specific VLEN or
+        SEW values makes re-targeting to a different configuration require manual
+        search-and-replace operations that are error-prone. Using \texttt{parameter}
+        and \texttt{localparam} with derived widths ensures that changing one constant
+        propagates correctly.
+\end{itemize}
+
+\subsection{Logic Synthesis}
+
+Synthesis translates the RTL description into a gate-level netlist using a target
+technology library (standard cell library for ASIC or LUT library for FPGA). The
+synthesiser performs several optimisation passes: technology mapping selects cells from
+the library; retiming may move registers across combinational logic to balance stage
+depths; and area/power optimisation reduces the gate count while respecting timing
+constraints \cite{weste2010cmos}. The output is a netlist of interconnected standard
+cells and a delay annotated timing model.
+
+\subsection{Static Timing Analysis}
+
+\gls{sta} verifies that the design meets its clock frequency specification without
+running gate-level simulation. It computes the worst-case propagation delay along
+every combinational path from one register's output to the next register's input,
+accounting for process, voltage, and temperature (PVT) corners. A path that arrives
+at a flip-flop's data input too close to the rising clock edge (setup violation) or
+too quickly after a previous clock edge (hold violation) will cause a functional failure
+in silicon. For the designs in this thesis, the FPGA timing analyser (Quartus Prime
+TimeQuest) plays the role of STA, and the Fmax reported is the reciprocal of the
+critical-path delay under slow-corner conditions.
+
+\subsection{Place and Route}
+
+\gls{pnr} takes the synthesised netlist and assigns each cell a physical location on
+the chip (placement) and then connects them using metal routing (routing). In a full
+ASIC flow, this step is performed using tools such as Cadence Innovus or Synopsys
+ICC2. The routed design produces a GDS-II file, the industry standard for mask
+fabrication. For FPGA, Quartus Prime Fitter performs placement onto the array of
+adaptive logic modules and routes through the programmable interconnect.
+
+\subsection{Physical Verification: DRC and LVS}
+
+\gls{drc} checks that all geometries in the GDS comply with the foundry's manufacturing
+rules: minimum feature sizes, spacing between metal layers, via densities, and antenna
+rules. \gls{lvs} compares the extracted netlist from the GDS (derived by recognising
+transistor structures from the layout polygons) against the schematic netlist from
+synthesis, verifying that the two are topologically equivalent. Both checks are
+mandatory before any design is submitted for fabrication.
+
+\section{Related Work}
+\label{sec:related-work}
+
+\subsection{Ara: Scalable RVV Vector Processor in 22nm FD-SOI}
+
+Ara is a scalable, application-class RVV vector processor developed at ETH Zürich and
+tapeout in TSMC 22nm FD-SOI technology \cite{ara2020}. It is coupled to the CVA6
+(formerly Ariane) 64-bit out-of-order RISC-V scalar core and supports the full RISC-V
+V extension including floating-point. The design is parameterised by the number of
+lanes, with published results for two-lane, four-lane, and eight-lane configurations.
+At four lanes, Ara achieves 1~GHz+ operating frequency and delivers 12.5~GFLOP/s on
+double-precision floating-point reductions.
+
+Ara's lane architecture assigns a fixed set of vector registers to each lane, enabling
+all lanes to process their assigned element slice in parallel. The register file in each
+lane stores VLEN/NLANE bits. An operand requester unit manages read-after-write hazards
+between vector instructions through a scoreboard. The memory system uses a banked
+scratchpad SRAM with one bank per lane to avoid memory bottlenecks.
+
+Ara represents the current state of the art for high-performance RVV implementations
+but is significantly more complex than a first-generation tapeout target: its lane
+count parameterisation, out-of-order scalar core coupling, floating-point support, and
+full V extension compliance require a design team of several engineers and a budget
+commensurate with industrial silicon development.
+
+\subsection{CVA6 / Ariane}
+
+CVA6 is the scalar core paired with Ara \cite{cva6}. It is a six-stage, in-order,
+single-issue 64-bit RISC-V core targeting application-class embedded Linux workloads.
+Its contributions most relevant to this thesis are the demonstration that a small
+team can produce a tapeout-quality RISC-V implementation in SystemVerilog with thorough
+verification, and its published FD-SOI results showing 1.7~GHz at 1.1~V. The CVA6
+core also serves as the reference for the scalar--vector dispatch interface that RVV
+processors use: the scalar core stalls when the vector unit is busy, forwarding the
+vector instruction and associated scalar register values directly to the coprocessor.
+This thesis adopts the same dispatch paradigm for the scalar--VPU interface.
+
+\subsection{Vitruvius+}
+
+Vitruvius+ is an area-efficient RVV vector coprocessor for high-performance computing
+developed at the Barcelona Supercomputing Centre \cite{vitruvius2021}. It emphasises
+decoupled memory access by providing a large number of outstanding memory requests,
+hiding DRAM latency for streaming kernels. Vitruvius+ integrates with RISC-V scalar
+cores via the RVXIF (RISC-V External Interface) extension, an emerging standard for
+coprocessor coupling that provides a more structured handshake than ad-hoc signal
+naming. Its vector register file is distributed across multiple SRAM macros with
+careful power gating to reduce idle-state power.
+
+\subsection{Hwacha}
+
+Hwacha is a decoupled vector accelerator developed at UC Berkeley as a predecessor to
+RVV, using a custom ISA rather than the standardised RVV encoding \cite{hwacha2015}.
+It introduced several concepts that influenced the RVV design, including the separation
+of vector configuration (the \texttt{vsetvl} idiom) from execution, the decoupled
+memory access architecture (where vector loads issue independently of computation),
+and the notion of a vector fetch unit that sequences element-wise operations from a
+single instruction. Hwacha was fabricated in TSMC 28nm and validated silicon results
+showed correct execution of linear algebra kernels.
+
+\subsection{Comparative Analysis}
+
+Table~\ref{tab:related-work} summarises the key characteristics of the related designs
+compared to this work.
+
+\begin{table}[H]
+  \centering
+  \caption{Comparison of RISC-V vector processor implementations}
+  \label{tab:related-work}
+  \begin{tabular}{@{}lccccc@{}}
+    \toprule
+    \textbf{Design} & \textbf{ISA} & \textbf{VLEN} & \textbf{Lanes} & \textbf{Tech} & \textbf{Target} \\
+    \midrule
+    Ara \cite{ara2020}       & RVV 1.0 (full) & 512--4096 & 2--8 & 22nm FD-SOI & HPC/Server \\
+    CVA6 \cite{cva6}         & RV64IMAFDC     & N/A        & N/A  & 22nm FD-SOI & App-class \\
+    Vitruvius+ \cite{vitruvius2021} & RVV 1.0 & 512 & 8   & 7nm         & HPC \\
+    Hwacha \cite{hwacha2015} & Custom (pre-RVV)& 2048      & 8    & 28nm        & HPC \\
+    \textbf{This work}       & \textbf{Zve32x} & \textbf{128} & \textbf{1} & \textbf{FPGA (Cyclone~V)} & \textbf{Embedded} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The fundamental distinction between this work and the related designs is the design
+target. All of Ara, Vitruvius+, and Hwacha target high-performance computing workloads
+in advanced technology nodes (7--28nm). They prioritise throughput, utilising multiple
+parallel lanes, large VLENs, and sophisticated out-of-order scalar cores. This thesis
+targets the opposite point in the design space: a minimum-area, tapeout-viable
+implementation of the Zve32x subset intended for embedded edge inference. The single-lane
+architecture, 128-bit VLEN, and 5-stage in-order scalar core reflect deliberate area
+minimisation for a first-generation student tapeout.
+
+The closest academic parallel is the open-source work on small embedded RVV processors,
+but to the authors' knowledge, no published work explicitly documents a complete
+single-lane Zve32x implementation with end-to-end functional verification on image
+processing benchmarks in publicly available SystemVerilog RTL, making this a distinct
+contribution to the open-source RISC-V hardware ecosystem.
+
+\section{Summary}
+\label{sec:background-summary}
+
+This chapter has established the technical foundations required to understand the
+design decisions in subsequent chapters. The RISC-V ISA provides a modular, open
+framework; its RV32IM base gives the scalar core its programming model, and the
+Zicsr extension provides the mechanism through which the vector unit exposes its
+configuration state. Vector processing fundamentally improves data-parallel performance
+by amortising instruction-fetch overhead across many elements, and the RVV Zve32x
+subset defines a minimum yet complete integer vector profile suitable for embedded
+inference. The ASIC design methodology sets strict synthesisability rules that are
+enforced throughout the RTL. Finally, the related work survey shows that while
+high-performance many-lane implementations exist, the single-lane embedded Zve32x
+target of this thesis occupies a distinct and underserved point in the design space.

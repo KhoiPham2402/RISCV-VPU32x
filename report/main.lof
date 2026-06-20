@@ -1,0 +1,22 @@
+\babel@toc {english}{}\relax 
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Harvard memory architecture: IMEM connected to the IF stage (read-only), DMEM with dual scalar/VLSU ports connected to the MEM stage and vector LSU.}}{23}{figure.caption.28}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Top-level block diagram of \texttt {riscv\_vpu\_top}: scalar pipeline, VPU subsystem, IMEM, DMEM (dual-port), and interconnect buses.}}{30}{figure.caption.36}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Five-stage scalar pipeline datapath of \texttt {pipelined\_vpu}}}{32}{figure.caption.38}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Block diagram of the \texttt {vproc\_system\_wrapper} VPU subsystem}}{35}{figure.caption.39}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces VPU execution \gls {fsm} state diagram (nine states)}}{38}{figure.caption.45}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Execution lane block diagram of \texttt {vproc\_processor\_lane}: operand muxes, seven parallel functional units, result selection mux, and mask application stage.}}{42}{figure.caption.50}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces ModelSim waveform of the reduction unit executing \texttt {vredsum.vs}: FSM state transitions, \texttt {busy}/\texttt {done} handshake, per-element \texttt {acc\_r} accumulation, and VRF writeback.}}{46}{figure.caption.61}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces VSE8.v masked store timing diagram}}{48}{figure.caption.66}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Firmware build flow diagram: .S source $\rightarrow $ .o (assemble) $\rightarrow $ .elf (link) $\rightarrow $ .bin (objcopy) $\rightarrow $ .hex (elf2hex\_lines.py) $\rightarrow $ \$readmemh in imem.sv}}{56}{figure.caption.71}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces ModelSim transcript of \texttt {tb\_lena\_gray} showing cycle count 34828, Y[0..15] output values, and ``DMEM dumped'' confirmation}}{73}{figure.caption.78}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Quartus Prime TimeQuest Fmax summary: 47.18~MHz fast-corner model (\texttt {+2.247~ns} slack) and slow-corner timing violation (\texttt {$-4.436$~ns}) for the Cyclone~V target.}}{75}{figure.caption.81}%
+\addvspace {10\p@ }
+\contentsfinish 
+\contentsfinish 

@@ -1,0 +1,345 @@
+%% ============================================================
+%% HCMUT Bachelor Thesis — Phạm Anh Khôi (2251026)
+%% Design and Implementation of a RISC-V Vector Processing Unit
+%%   Targeting ASIC Tapeout
+%% Advisor: TS. Nguyễn Tuấn Hùng
+%% Faculty of Computer Science and Engineering
+%% Academic Year 2024–2025
+%% ============================================================
+\documentclass[12pt,a4paper,oneside]{book}
+
+%% ── Encoding & font ─────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T5,T1]{fontenc}
+\usepackage{mathptmx}           % Times New Roman body
+\usepackage[scaled=0.88]{helvet}% Helvetica for headings
+\usepackage{courier}            % Courier for monospace
+
+%% ── HCMUT style ─────────────────────────────────────────────
+\usepackage{bkthesis}
+\usepackage{cs}
+
+%% ── Language ─────────────────────────────────────────────────
+\AtBeginDocument{\selectlanguage{english}}
+
+%% ── Hyphenation & justification ──────────────────────────────
+\usepackage{microtype}          % character protrusion + font expansion
+\tolerance=1500
+\hbadness=1500
+\emergencystretch=2em
+
+%% ── Line spacing ─────────────────────────────────────────────
+\usepackage{setspace}
+\setstretch{1.25}               % slightly tighter than 1.5, cleaner look
+
+%% ── Page headers / footers ───────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily\nouppercase{\leftmark}}
+\fancyhead[R]{\small\sffamily\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+% Plain style for chapter-opening pages
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\small\sffamily\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+%% ── Chapter & section headings (titlesec) ────────────────────
+\usepackage{titlesec}
+\definecolor{chapterblue}{RGB}{0,70,127}
+
+% Chapter: big number, rule, title
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\huge\bfseries\color{chapterblue}}
+  {\filleft\fontsize{60}{60}\selectfont\color{chapterblue!30}\thechapter}
+  {-10pt}
+  {\titlerule[1.5pt]\vspace{6pt}\filright}
+  [\vspace{4pt}\titlerule]
+
+\titlespacing*{\chapter}{0pt}{-20pt}{30pt}
+
+% Section
+\titleformat{\section}
+  {\normalfont\sffamily\large\bfseries\color{chapterblue}}
+  {\thesection}{1em}{}
+
+% Subsection
+\titleformat{\subsection}
+  {\normalfont\sffamily\normalsize\bfseries}
+  {\thesubsection}{1em}{}
+
+% Subsubsection
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\itshape}
+  {\thesubsubsection}{1em}{}
+
+%% ── TOC styling ──────────────────────────────────────────────
+\usepackage{titletoc}
+\usepackage[titles]{tocloft}
+\renewcommand{\cftchapfont}{\sffamily\bfseries}
+\renewcommand{\cftsecfont}{\sffamily}
+\renewcommand{\cftsubsecfont}{\sffamily\small}
+\setlength{\cftbeforechapskip}{6pt}
+\renewcommand{\cftchapleader}{\bfseries\cftdotfill{\cftdotsep}}
+
+%% ── Caption styling ──────────────────────────────────────────
+\usepackage[
+  font={small},
+  labelfont={bf,sf},
+  labelsep=period,
+  justification=centering,
+  skip=6pt,
+]{caption}
+
+%% ── Maths ────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+\numberwithin{equation}{chapter}
+
+%% ── Figures & tables ─────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+% Nicer table row colors
+\definecolor{tableheadblue}{RGB}{210,228,248}
+\definecolor{tablerowgray}{RGB}{245,245,245}
+
+%% ── Code listings ────────────────────────────────────────────
+\usepackage{listings}
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecomment}{RGB}{60,128,49}
+\definecolor{codestring}{RGB}{163,21,21}
+\definecolor{codenumber}{RGB}{128,128,128}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\setstretch{1.0},
+  keywordstyle=\bfseries\color{codekw},
+  commentstyle=\itshape\color{codecomment},
+  stringstyle=\color{codestring},
+  numbers=left,
+  numberstyle=\tiny\color{codenumber},
+  numbersep=10pt,
+  stepnumber=1,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=false,
+  tabsize=4,
+  captionpos=b,
+  showstringspaces=false,
+  xleftmargin=2em,
+  framexleftmargin=2em,
+  aboveskip=10pt,
+  belowskip=6pt,
+}
+
+% RISC-V Assembly
+\lstdefinelanguage{RISCV}{
+  morekeywords={li,lw,lbu,sw,sb,addi,add,sub,mv,call,ret,j,bge,blt,beqz,bnez,
+                andi,lui,jalr,jal,nop,
+                vsetvli,vle8.v,vle16.v,vle32.v,vse8.v,vse16.v,vse32.v,
+                vadd.vv,vadd.vx,vsub.vv,vmulhu.vx,vmul.vx,vmulh.vx,
+                vredsum.vs,vredmax.vs,vredmin.vs,
+                vmv.v.x,vmv.x.s},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  sensitive=true,
+}
+
+% SystemVerilog
+\lstdefinelanguage{SV}{
+  morekeywords={module,endmodule,input,output,logic,wire,reg,assign,
+                always_ff,always_comb,always,if,else,case,endcase,
+                begin,end,posedge,negedge,parameter,localparam,
+                typedef,enum,struct,packed,import,package,endpackage,
+                unique,default,initial,fork,join,join_none,
+                for,while,function,endfunction,task,endtask,
+                automatic,void,int,string},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  sensitive=true,
+}
+
+%% ── Hyperlinks ───────────────────────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor={chapterblue},
+  citecolor={green!45!black},
+  urlcolor={chapterblue},
+  pdfauthor={Pham Anh Khoi},
+  pdftitle={Design and Implementation of a RISC-V Vector Processing Unit},
+  pdfsubject={Bachelor Thesis, HCMUT 2025},
+  bookmarksnumbered=true,
+]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+%% ── Acronyms ─────────────────────────────────────────────────
+\usepackage[acronym,toc,nopostdot,nonumberlist]{glossaries}
+\makeglossaries
+\input{acronyms}
+
+%% ── Paragraph spacing ────────────────────────────────────────
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{3pt}
+
+%% ── Placeholder boxes ────────────────────────────────────────
+\definecolor{placeholderbg}{RGB}{255,252,230}
+\definecolor{placeholderborder}{RGB}{200,170,0}
+
+\newcommand{\waveformplaceholder}[2]{%
+  \begin{figure}[H]
+    \centering
+    \setlength{\fboxsep}{0pt}
+    \setlength{\fboxrule}{1pt}
+    \fcolorbox{placeholderborder}{placeholderbg}{%
+      \begin{minipage}{0.88\textwidth}
+        \centering\vspace{1.5cm}
+        {\large\color{placeholderborder}$\blacktriangleright$ Waveform Placeholder}\\[0.5cm]
+        \textbf{Replace with ModelSim screenshot}\\[0.25cm]
+        \textit{\small #2}
+        \vspace{1.5cm}
+      \end{minipage}}
+    \caption{#1}
+  \end{figure}
+}
+
+\newcommand{\figplaceholder}[2]{%
+  \begin{figure}[H]
+    \centering
+    \setlength{\fboxsep}{0pt}
+    \setlength{\fboxrule}{1pt}
+    \fcolorbox{placeholderborder}{placeholderbg}{%
+      \begin{minipage}{0.88\textwidth}
+        \centering\vspace{1.5cm}
+        {\large\color{placeholderborder}$\blacktriangleright$ Figure Placeholder}\\[0.5cm]
+        \textbf{#2}
+        \vspace{1.5cm}
+      \end{minipage}}
+    \caption{#1}
+  \end{figure}
+}
+
+%% ── Misc ─────────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=4pt}          % tighter lists
+\usepackage{pdfpages}
+\usepackage{afterpage}
+\usepackage{emptypage}                   % suppress headers on blank pages
+
+%% ── Metadata ─────────────────────────────────────────────────
+\title{Design and Implementation of a\\[4pt]
+       RISC-V Vector Processing Unit}
+\cstuname{Pham Anh Khoi}
+\csstuid{2251026}
+\csCouncil{Computer Engineering}
+\csSupervise{Dr. Nguyen Tuan Hung}
+\csReviewer{}
+\crname{CAPSTONE PROJECT 2}
+\cttime{June 2025}
+
+%% ==============================================================
+\thesislayout
+\begin{document}
+
+%% ── Front matter ─────────────────────────────────────────────
+\frontmatter
+\coverpage
+
+\begin{declaration}
+I hereby declare that this thesis, \textit{``Design and Implementation of a RISC-V Vector
+Processing Unit Targeting ASIC Tapeout,''} is my own original work carried out under the
+supervision of TS.\ \foreignlanguage{vietnamese}{Nguyễn Tuấn Hùng} at Ho Chi Minh City University of Technology.
+All sources of information used in this work are duly acknowledged and referenced. No
+part of this thesis has been submitted for any other degree or qualification at this or
+any other institution.
+
+\vspace{2.5cm}
+\begin{flushright}
+Ho Chi Minh City, June 2025\\[1cm]
+\textbf{\foreignlanguage{vietnamese}{Phạm Anh Khôi}}
+\end{flushright}
+\end{declaration}
+
+\begin{acknowledgments}
+I would like to express my sincere gratitude to my supervisor, TS.\ \foreignlanguage{vietnamese}{Nguyễn Tuấn Hùng},
+for his invaluable guidance, encouragement, and technical insight throughout this project.
+His expertise in digital design and computer architecture continually challenged me to
+think rigorously and produce work of the highest quality.
+
+I am also grateful to the faculty and staff of the Department of Computer Science and
+Engineering at Ho Chi Minh City University of Technology for providing an excellent
+educational environment. Special thanks go to my classmates and lab partners for the
+many stimulating discussions that shaped both the design and this report.
+
+Finally, I thank my family for their unwavering support and patience during the long
+nights of debugging and writing. This work would not have been possible without them.
+\end{acknowledgments}
+
+\begin{abstract}
+\noindent
+This thesis presents the design and implementation of a vector processing unit~(VPU)
+integrated with a RISC-V scalar core, targeting ASIC tapeout. The system implements
+the \texttt{rv32im\_zicsr\_zve32x\_zvl128b} instruction set architecture, providing
+a 128-bit vector register file with support for element widths of 8, 16, and 32~bits
+and register grouping factors (LMUL) of 1, 2, 4, and~8.
+
+The VPU is implemented as a single-lane, multi-cycle execution engine controlled by a
+finite state machine. It supports the full Zve32x subset including arithmetic,
+logical, shift, compare, reduction, and vector load/store operations, totalling more
+than 50 distinct instruction encodings. A five-stage pipelined RISC-V scalar core
+(RV32IM with load-use stall and data forwarding) dispatches vector instructions to the
+VPU through a dedicated instruction queue. The scalar-vector interface follows an
+occupancy-based stall protocol to maintain correct program order.
+
+The design is verified using ModelSim with a comprehensive testbench suite of 172
+directed test cases, all passing. Integration-level benchmarks include BT.601
+RGB-to-grayscale conversion on a $128\times128$ image (16\,384 pixels verified
+correct) and matrix multiplication. A UART interface enables real-data end-to-end
+testing. FPGA prototyping on the DE10-Standard (Intel Cyclone~V) achieves an
+$F_\text{max}$ of 47.18\,MHz at 10\,438 adaptive logic modules, representing a 25\%
+area reduction and 3$\times$ frequency improvement after redesigning the reduction
+unit from a 64-deep combinational chain to a serial per-element accumulator.
+
+\medskip
+\noindent\textbf{Keywords:} RISC-V, vector processor, RVV, Zve32x, ASIC design,
+SIMD, image processing, FPGA prototyping.
+\end{abstract}
+
+%% ── Tables of contents ───────────────────────────────────────
+\tableofcontents
+\listoffigures
+\listoftables
+\printglossary[type=\acronymtype, title=List of Abbreviations, toctitle=List of Abbreviations]
+
+%% ── Main matter ──────────────────────────────────────────────
+\mainmatter
+\pagestyle{fancy}
+
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_background}
+\input{chapters/ch3_specification}
+\input{chapters/ch4_hardware}
+\input{chapters/ch5_software}
+\input{chapters/ch6_evaluation}
+\input{chapters/ch7_conclusion}
+
+%% ── Back matter ──────────────────────────────────────────────
+\backmatter
+\bibliographystyle{ieeetr}
+\bibliography{refs}
+
+\end{document}

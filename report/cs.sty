@@ -1,0 +1,39 @@
+% cs.sty — Computer Science utilities for HCMUT thesis
+% Original by thanhhungqb@gmail.com
+
+\ProvidesPackage{cs}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.misc, shapes.geometric, positioning, automata,
+                topaths, arrows, arrows.meta, fit, backgrounds, calc}
+
+\tikzset{
+    vertex/.style = {circle, fill=black, outer sep=2pt, inner sep=1pt}
+}
+\tikzstyle{startstop}  = [rectangle, rounded corners, minimum width=3cm,
+                          minimum height=1cm, text centered, draw=black, fill=red!20]
+\tikzstyle{io}         = [trapezium, trapezium left angle=70, trapezium right angle=110,
+                          minimum width=3cm, minimum height=1cm, text centered,
+                          draw=black, fill=blue!20]
+\tikzstyle{process}    = [rounded rectangle, minimum width=3cm, minimum height=1cm,
+                          text centered, draw=black]
+\tikzstyle{decision}   = [diamond, minimum width=3cm, minimum height=1cm,
+                          text centered, draw=black]
+\tikzstyle{arrow}      = [thick,->,>=stealth]
+
+% Block diagram styles
+\tikzstyle{module}     = [rectangle, draw=black, thick, minimum width=2.5cm,
+                          minimum height=1.2cm, text centered, fill=blue!10,
+                          font=\small]
+\tikzstyle{toplevel}   = [rectangle, draw=black, very thick, minimum width=3cm,
+                          minimum height=1.5cm, text centered, fill=gray!15,
+                          font=\small\bfseries]
+\tikzstyle{signal}     = [->, >=latex, thick]
+\tikzstyle{bidir}      = [<->, >=latex, thick]
+
+% FSM state styles
+\tikzstyle{fsmstate}   = [circle, draw=black, thick, minimum size=1.6cm,
+                          text centered, align=center, fill=cyan!15, font=\small]
+\tikzstyle{fsmstart}   = [circle, draw=black, very thick, minimum size=1.6cm,
+                          text centered, align=center, fill=green!25, font=\small]
+\tikzstyle{fsmtrans}   = [->, >=stealth, thick, font=\scriptsize]

@@ -56,6 +56,7 @@ module vproc_system_wrapper #(
     output [ 3:0]           vlsu_mem_be,
     output [31:0]           vlsu_mem_wdata,
     input  [31:0]           vlsu_mem_rdata,
+    input                   vlsu_mem_ready,  // from dmem_sync vlsu_ready (1-cyc read latency ack)
 
     // VLSU status (for stall signaling back to scalar core via vpu_ready)
     output                  vlsu_busy_o
@@ -83,6 +84,7 @@ module vproc_system_wrapper #(
     wire fsm_pop_ready;
     wire fsm_reduction_start;
     wire fsm_reduction_en;
+    wire red_busy;
 
     // ===== Latched instruction/context (chốt bởi FSM) =====
     reg [CTRL_WIDTH-1:0] ctrl_r;
@@ -202,11 +204,16 @@ module vproc_system_wrapper #(
     wire vlsu_busy_store_int;
     wire fifo_or_fsm_busy = fifo_data_valid || busy;
 
-    // WAW guard: block load from firing while OP-V FSM is writing to the same vd.
-    // Uses vd_addr_eff (from vrf_addr_gen) and busy (from FSM) — both forward refs, OK in SV.
+    // WAW guard: block load from firing while OP-V FSM is writing OR has a pending
+    // instruction in the FIFO that targets the same vd.
+    // Gap in original: busy=0 when FIFO has instruction but FSM hasn't latched it yet,
+    // allowing a load to fire in the same cycle the FSM transitions to ST_EXEC.
+    // Fix: when FSM is idle but FIFO has data, compare against FIFO head vd (fifo_ctrl_out[14:10]).
+    wire [4:0] pending_vd_addr = busy ? vd_addr_eff : fifo_ctrl_out[14:10];
     wire load_waw_stall = instr_valid && is_vls_load_raw
                           && is_vls_unit_stride && is_vls_regular
-                          && busy && (vd_addr_eff == instruction[11:7]);
+                          && (busy || fifo_data_valid)
+                          && (pending_vd_addr == instruction[11:7]);
 
     // Dispatcher: fire VLSU when:
     //   - instruction valid, recognised VLS, VLSU free
@@ -352,6 +359,7 @@ module vproc_system_wrapper #(
         .is_reduction (fifo_ctrl_out[47]),
         .counter_done (counter_done),
         .reduction_done(reduction_wb_valid),
+        .reduction_busy(red_busy),
         .latch_ctrl_en(fsm_latch_ctrl_en),
         .csr_cfg_en   (fsm_csr_cfg_en),
         .counter_start(fsm_counter_start),
@@ -539,17 +547,18 @@ module vproc_system_wrapper #(
     assign lane3_v0_merge_bits = vm_r ? 32'hFFFF_FFFF : lane3_v0_merge_bits_r;
 
     // ===== Reduction op decode + reduction unit =====
+    // RVV 1.0 §14.1: funct6[2:0] encodes the operation (funct3=010, funct6[5:3]=000)
     always @(*) begin
-        case (funct6_r)
-            6'b001100: reduction_operation = RED_SUM;   // vredsum
-            6'b001101: reduction_operation = RED_MAX;   // vredmax
-            6'b001110: reduction_operation = RED_MAXU;  // vredmaxu
-            6'b001111: reduction_operation = RED_MIN;   // vredmin
-            6'b010100: reduction_operation = RED_MINU;  // vredminu
-            6'b011100: reduction_operation = RED_AND;   // vredand
-            6'b011101: reduction_operation = RED_OR;    // vredor
-            6'b011110: reduction_operation = RED_XOR;   // vredxor
-            default:   reduction_operation = RED_SUM;
+        case (funct6_r[2:0])
+            3'b000: reduction_operation = RED_SUM;    // vredsum.vs
+            3'b001: reduction_operation = RED_AND;    // vredand.vs
+            3'b010: reduction_operation = RED_OR;     // vredor.vs
+            3'b011: reduction_operation = RED_XOR;    // vredxor.vs
+            3'b100: reduction_operation = RED_MINU;   // vredminu.vs
+            3'b101: reduction_operation = RED_MIN;    // vredmin.vs
+            3'b110: reduction_operation = RED_MAXU;   // vredmaxu.vs
+            3'b111: reduction_operation = RED_MAX;    // vredmax.vs
+            default: reduction_operation = RED_SUM;
         endcase
     end
 
@@ -565,7 +574,8 @@ module vproc_system_wrapper #(
         .operation   (reduction_operation),
         .done        (fsm_reduction_en && is_reduction_r && counter_done),
         .result_out  (reduction_result),
-        .wb_valid    (reduction_wb_valid)
+        .wb_valid    (reduction_wb_valid),
+        .busy        (red_busy)
     );
 
     // ===== Mask write buffer =====
@@ -615,7 +625,7 @@ module vproc_system_wrapper #(
         .mem_be            (vlsu_mem_be),
         .mem_wdata         (vlsu_mem_wdata),
         .mem_rdata         (vlsu_mem_rdata),
-        .mem_ready         (1'b1),                // synchronous 1-cycle SRAM
+        .mem_ready         (vlsu_mem_ready),       // from dmem_sync vlsu_ready
         // VRF write (load writeback)
         .vrf_we            (vlsu_vrf_we),
         .vrf_waddr         (vlsu_vrf_waddr),

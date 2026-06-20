@@ -6,8 +6,14 @@
 
 ## Current Phase
 
-**Phase:** RTL Development & Functional Verification
-**Target:** ASIC Tapeout
+**Phase:** FPGA Board Demo — VGA display working; RGB→grayscale pipeline debugged & fixed; awaiting full recompile for hardware validation
+**Target:** ASIC Tapeout (primary) / DE10-Standard demo board (FPGA validation)
+
+**Last session (2026-05-31):**
+- VGA output confirmed working on DE10-Standard with pre-loaded Lena Y channel
+- Found & fixed VPU VLSU CSR stall bug (see Issue #17 + Change Log)
+- Simulation: RGB→grayscale PASS 4096/4096 words after fix
+- Next step: Full Quartus recompile → program .sof → hardware verify RGB→grayscale
 
 ---
 
@@ -25,8 +31,24 @@
 | Vector LSU | ✅ Done | `rtl/vproc_vec_lsu.sv` |
 | Mask support (vm=0) | ✅ Done | `rtl/vproc_mask_enable.sv` |
 | FSM execution control | ✅ Done | `rtl/vproc_fsm.sv` |
-| VPU–CPU integration | ✅ Done | `rtl/riscv_vpu_top.sv` |
+| VPU–CPU integration (single-cycle) | ✅ Done | `rtl/riscv_vpu_top.sv` |
 | Full instruction regression | ✅ Done | 172/172 PASS (2026-05-01) |
+| 5-stage pipelined scalar core | ✅ Done | `rtl/pipeline/pipelined_vpu.sv` — load-use stall, EX/MEM/WB forwarding, VPU dispatch |
+| Sync IMEM + DMEM | ✅ Done | `rtl/pipeline/imem_sync.sv`, `rtl_trial/mem/dmem_sync.sv` — 1-cycle latency, byte-enable, VLSU port |
+| UART 8N1 TL-UL slave | ✅ Done | `rtl_trial/uart/uart.sv` — RX/TX FIFO×8, 16× oversampling, baud configurable |
+| UART top-level integration (v4) | ✅ Done | `rtl/riscv_vpu_top_v4.sv` — pipelined core + VPU + UART @ 0xFF000000 |
+| UART firmware — smoke test (16 px) | ✅ Done | `sw/uart_lena_test.S` — 48-byte RX, 1 VPU iter, ACK 0xAA; compiled 46 insns |
+| UART firmware — full Lena (128×128) | ✅ Done | `sw/uart_lena.S` — 49152-byte RX, 1024 VPU iters, ACK 0xAA; compiled 53 insns |
+| UART simulation — smoke test | ⏳ Pending | `run_uart_sim.do` + `bench/tb_uart_lena.sv` — awaiting ModelSim run |
+| UART simulation — full Lena image | ⏳ Pending | `run_uart_lena_img_sim.do` + `bench/tb_uart_lena_img.sv` — awaiting ModelSim run |
+| FPGA VGA output — VGA timing + controller | ✅ Done | `fpga/rtl/hdmi/vga_timing.sv` + `fpga/rtl/vga/vga_ctrl.sv` — 640×480@60Hz, reads DMEM[0xC000..] |
+| FPGA VGA output — hardware verified | ✅ Done | 2026-05-31: Lena grayscale image displayed on VGA monitor via ADV7123 DAC |
+| FPGA top-level (de10_standard_top) | ✅ Done | `fpga/rtl/top/de10_standard_top.sv` + `riscv_vpu_top_fpga.sv` — VGA via ADV7123, GPIO_0 for UART |
+| Quartus PLL IP (25 MHz pclk) | ✅ Done | `pll.qip` — 50→25 MHz outclk_1, `locked` used as reset gate |
+| Quartus DMEM bank IP (dmem_bank) | ✅ Done | `dmem_bank.qip` — TDP 8-bit M10K × 4 lanes, 16384 deep |
+| DMEM MIF init (RGB pre-load) | ✅ Done | `fpga/rtl/mem/dmem_bank_b0-b3.v` wrappers + `gen_dmem_mif.py`; bypasses UART |
+| FPGA compile + program DE10-Standard | ✅ Done | Quartus 18.1 — first `.sof` running, VGA display confirmed |
+| RGB→grayscale FPGA demo (VPU) | 🔄 In progress | Sim PASS 4096/4096; needs full recompile after VLSU CSR stall bugfix |
 | Synthesis (Yosys / DC) | ⬜ Not started | — |
 | Static timing analysis | ⬜ Not started | — |
 | Clock gating insertion | ⬜ Not started | — |
@@ -72,6 +94,8 @@
 | #14 | CTRL_WIDTH=48 nhưng decoder pack 49 bits → bit[48] cfg_is_vsetivli bị drop silently | High | — |
 | #15 | lsu.sv DMEM 64KB (16384 words) là simulation-only cho lena_gray 128×128 — cần parameterize và tách riêng config tapeout vs benchmark | High | — |
 | #16 | vsetivli (immediate AVL ≤ 31) chưa decode được — workaround: dùng AVL > 31 trong C code | Medium | — |
+| #17 | ~~VLSU CSR stall bug: vle8.v fires during vsetvli ST_CONFIG → csr_vl_o=0 → num_words=1 → lanes 1-3 = 0 → R contribution mất cho elements 4-15~~ | ~~Critical~~ | ~~Fixed 2026-05-31~~ |
+| #18 | UART: cần USB-UART adapter (CP2102/CH340) cắm vào JP1 chân 3(RX)/4(TX)/2(GND). Built-in UART thuộc HPS, không dùng được từ FPGA fabric | Medium | Hardware issue |
 
 ---
 
@@ -94,12 +118,117 @@
 | 2026-04-28 | `tb_riscv_vpu_top` (bench_matmul) | ✅ PASS | t1=0x0A(10) t2=0x1A(26) t3=0x2A(42) t4=0x3A(58); 4×4 int matmul C=A*B correct in 317 cycles |
 | 2026-04-28 | `tb_riscv_vpu_top` (bench_imgproc regression) | ✅ PASS | t1=0x7BA2 t2=0x7C6A t3=0x9AE2 t4=0xFF00 unchanged after hazard fixes |
 | 2026-05-02 | `tb_lena_gray` (lena_gray 128×128) | ✅ PASS | 16384/16384 pixels correct, max_err=0, 34828 cycles; SEW=8, 1024 iterations, DMEM 64KB |
+| 2026-05-09 | `tb_uart_lena` (UART smoke test) | ⏳ Pending | 16 pixels R=G=B=128, expected Y=127; `run_uart_sim.do` |
+| 2026-05-09 | `tb_uart_lena_img` (UART 128×128 full Lena) | ⏳ Pending | 49152 bytes UART RX, full BT.601, dump DMEM → PNG; `run_uart_lena_img_sim.do` |
 | 2026-05-01 | `tb_riscv_vpu_top` (bench_axpy) | ✅ PASS | y[0]=4 y[4]=16 y[8]=28 y[12]=40 correct (N=16, a=3, 221 cycles) |
 | 2026-05-01 | `tb_vproc_all_instr` | ✅ 172/172 PASS | Post-decoder fix; vmul.vx/vmulh.vx now use scalar rs1 correctly |
 | 2026-04-27 | `tb_vproc_all_instr` | ✅ 172/172 PASS | ALU VV/VX/VI, VRSUB, Logic, Shift, VMIN/VMAX, Compare (partial), VMULH, Widening, LMUL=2, Reductions |
 | 2026-04-27 | `tb_vproc_vlsu` | ✅ 75/75 PASS | e8/e16/e32 random VL, masked store |
 | — | `tb_vproc_adder` | — | — |
 | — | `tb_vproc_mul` | — | — |
+
+---
+
+## Pipeline + UART Integration (riscv_vpu_top_v4)
+
+**Status:** RTL complete — awaiting ModelSim simulation runs.
+
+**Active simulation top:** `rtl/riscv_vpu_top_v4.sv`
+
+| Component | Implementation |
+|-----------|---------------|
+| Scalar core | 5-stage `pipelined_vpu.sv` (IF/ID/EX/MEM/WB, load-use stall, EX→MEM→WB forwarding) |
+| IMEM | `rtl/pipeline/imem_sync.sv` — synchronous 1-cycle, loaded from `imem.hex` |
+| DMEM | `rtl_trial/mem/dmem_sync.sv` — 64KB, scalar + VLSU dual-port, byte-enable |
+| UART | `rtl_trial/uart/uart.sv` — 8N1, 8-byte FIFOs, 16× oversampling, TL-UL slave |
+| UART address | `0xFF000000` decoded inline in top-level; 1-cycle registered latency to match dmem pipeline |
+| VPU | `vproc_system_wrapper.sv` — unchanged, connects via `pipelined_vpu` VPU dispatch port |
+
+**To run:**
+```bash
+vsim -c -do run_uart_sim.do           # smoke: 16 pixels, ~200k cycles
+vsim -c -do run_uart_lena_img_sim.do  # full: 128×128 Lena, ~4M cycles
+python sw/benchmarks/lena_gray/reconstruct.py \
+       sw/benchmarks/lena_gray/v3_output/lena_dmem_out_uart.hex
+```
+
+---
+
+## FPGA VGA Demo Stage (DE10-Standard, Cyclone V)
+
+**Status:** VGA display hardware-verified. RGB→grayscale pipeline debugged & fixed in sim. Awaiting full Quartus recompile to push fix to hardware.
+
+**Signal flow (DMEM-init mode, no UART):**
+```
+DMEM pre-init via MIF (RGB at 0x0000-0xBFFF) → firmware BT.601 VPU (dmem_lena.S)
+→ DMEM[0xC000–0xFFFF] (Y channel written by VPU) → vga_ctrl → ADV7123 DAC → VGA monitor
+```
+**Signal flow (Y direct mode, verified working):**
+```
+DMEM pre-init via MIF (Y at 0xC000-0xFFFF) → trivial firmware (vga_lena_y.S, j done)
+→ vga_ctrl reads continuously → ADV7123 → VGA monitor  ← VERIFIED ON HARDWARE ✅
+```
+
+| Component | File | Notes |
+|-----------|------|-------|
+| VGA timing | `fpga/rtl/hdmi/vga_timing.sv` | 640×480@60Hz; H=800, V=525; HS/VS active-low, DE |
+| I2C master | `fpga/rtl/hdmi/i2c_master.sv` | 100 kHz, quarter-period FSM, START/byte/ACK/STOP |
+| ADV7513 config | `fpga/rtl/hdmi/adv7513_cfg.sv` | 14 registers at boot: power-on, RGB444 8bpc, HDMI mode, HPD override |
+| HDMI controller | `fpga/rtl/hdmi/hdmi_ctrl.sv` | Reads Y from DMEM via vid port; 3× scale → 384×384 centered on 640×480; RGB888 gray output |
+| DMEM video port | `fpga/rtl/mem/dmem_qip_wrapper.sv` | Port A mux: scalar priority; `vid_re` enables video read when `s_re=0` |
+| FPGA top | `fpga/rtl/top/riscv_vpu_top_fpga.sv` | `pclk` input (from PLL), `hdmi_tx_*` outputs, `u_hdmi` wired |
+| Timing constraints | `fpga/constraints/timing.sdc` | `pclk` 25 MHz, HDMI output delay, I2C false path |
+
+**Pixel mapping:**
+```
+screen active region: hc=[128..511], vc=[48..431]  (384×384 centered)
+frame_row = (vc - 48) / 3    → 0..127
+frame_col = (hc - 128) / 3   → 0..127
+dmem_word = 12288 + frame_row*32 + frame_col/4
+byte_lane = frame_col % 4
+RGB888    = {Y, Y, Y}  (grayscale)
+```
+
+**Quartus steps to complete before board test:**
+1. IP Catalog → `altpll`: 50 MHz in → 25 MHz out → output to `pclk` top port
+2. IP Catalog → `RAM: 2-PORT (altsyncram)`: TDP, 8b×16384, M10K → output name `dmem_bank` → add `.qip`
+3. Pin assignment: map `hdmi_tx_d[23:0]`, `hdmi_tx_clk`, `hdmi_tx_hs/vs/de`, `hdmi_tx_scl/sda` to DE10-Standard HDMI_TX pins
+4. Compile → program `.sof`
+
+---
+
+## Trial Pipeline Design (rtl_trial/)
+
+**Status:** Superseded by `riscv_vpu_top_v4` for simulation. Components reused: `dmem_sync.sv`, `uart.sv`, `tl_pkg.sv`.
+
+**Architecture changes vs production rtl/:**
+| Component | Before (rtl/) | After (rtl_trial/) |
+|-----------|--------------|-------------------|
+| Scalar core | Single-cycle (`single_cycle.sv`) | 2-stage pipeline (`scalar_core_v2.sv`) |
+| IMEM | Combinatorial read | Synchronous, 1-cycle latency (`imem_sync.sv`) |
+| DMEM | Combinatorial read, async reset | Synchronous read, byte-enable, sync reset (`dmem_sync.sv`) |
+| Memory bus | Direct wires from LSU | TileLink-UL 1M-2S (`tl_ul_xbar.sv`) |
+| UART | None | 8N1 RX/TX, 8-byte FIFOs, TL-UL slave (`uart.sv`) |
+| LSU IO write logic | 4× copy-paste SB/SH/SW | Single `apply_store()` function |
+
+**File inventory:**
+```
+rtl_trial/
+├── mem/imem_sync.sv        — sync IMEM, en_i freeze for VPU stall
+├── mem/dmem_sync.sv        — sync DMEM, 1-cycle read, byte-enable + VLSU port
+├── bus/tl_pkg.sv           — TileLink-UL types
+├── bus/tl_ul_xbar.sv       — 1M-2S crossbar (0x0000xxxx=DMEM, 0xFF0000xx=UART)
+├── bus/tl_ul_dmem_adapter.sv — TL-UL ↔ dmem_sync flat interface
+├── uart/uart.sv            — UART RX/TX, TL-UL slave registers
+├── riscv/scalar_core_v2.sv — 2-stage IF/EX pipeline, load stall, branch flush
+└── riscv_vpu_top_v2.sv     — top-level integrating all above + VPU
+```
+**Simulation:** `vsim -do run_trial_sim.do` → `work.tb_riscv_vpu_top_v2`
+
+**Known issues to resolve during simulation:**
+- Load stall in `scalar_core_v2` needs verification with DMEM round-trip
+- `scalar_core_v2` ALU: M-extension block has duplicate outer case (needs merge)
+- VLSU 2-cycle load (mem_ready handshake with sync DMEM) → ~2× latency for vector LD
 
 ---
 
@@ -128,3 +257,23 @@
 | 2026-05-02 | Add: sw/benchmarks/lena_gray — RGB→grayscale (16×16→128×128, SEW=8, vmulhu.vx BT.601); 16384/16384 PASS, 34828 cycles; lsu.sv DMEM tăng lên 64KB (16384 words) cho benchmark | sw/benchmarks/lena_gray/, bench/tb_lena_gray.sv, run_lena_sim.do, rtl/riscv/lsu.sv |
 | 2026-05-01 | Add: sw/benchmarks/axpy — AXPY benchmark (N=16, a=3); kết quả đúng y[0]=4, y[4]=16, y[8]=28, y[12]=40 | sw/benchmarks/axpy/ |
 | 2026-05-01 | Fix: run_top_sim.do, vproc_all_instr.do — thêm quit -f để hỗ trợ batch mode (vsim -c -do ...) | run_top_sim.do, vproc_all_instr.do |
+| 2026-05-03 | Simplify: lsu.sv IO write logic — extract `apply_store()` function, remove 4× SB/SH/SW copy-paste; switch to synchronous reset | rtl/riscv/lsu.sv |
+| 2026-05-03 | Add: Trial pipeline design — 2-stage core, sync IMEM/DMEM, TileLink-UL bus, UART | rtl_trial/, bench/tb_riscv_vpu_top_v2.sv, run_trial_sim.do |
+| 2026-05-09 | Add: 5-stage pipelined scalar core with VPU dispatch — replaces single-cycle as primary simulation core; load-use stall, EX/MEM/WB forwarding, IO + UART address decode | rtl/pipeline/pipelined_vpu.sv |
+| 2026-05-09 | Add: riscv_vpu_top_v4.sv — new simulation top integrating pipelined_vpu + dmem_sync + vproc_system_wrapper + uart; UART decoded inline at 0xFF000000, 1-cycle latency registered at top | rtl/riscv_vpu_top_v4.sv |
+| 2026-05-09 | Add: UART firmware uart_lena_test.S (16-pixel smoke, 46 insns) and uart_lena.S (128×128 full, 53 insns); BT.601 via vmulhu.vx (Y=R×77+G×150+B×29 / 256) | sw/uart_lena_test.S, sw/uart_lena.S |
+| 2026-05-09 | Add: UART simulation testbenches tb_uart_lena.sv (smoke), tb_uart_lena_img.sv (full image dump → reconstruct.py) | bench/tb_uart_lena.sv, bench/tb_uart_lena_img.sv |
+| 2026-05-09 | Add: run_uart_sim.do (smoke test) and run_uart_lena_img_sim.do (full image); both auto-build firmware from sw/ and copy → imem.hex | run_uart_sim.do, run_uart_lena_img_sim.do |
+| 2026-05-09 | Fix: sw/Makefile — Windows TEMP/TMP path export (GCC.exe native binary ignores MSYS2 /tmp); -pipe flag to CFLAGS; explicit uart_lena.hex and uart_lena_test.hex targets | sw/Makefile |
+| 2026-05-09 | Add: FPGA HDMI output stage for DE10-Standard — vga_timing.sv (640×480@60Hz), i2c_master.sv (100 kHz FSM), adv7513_cfg.sv (14-reg boot), hdmi_ctrl.sv (Y→RGB888, 3× scale centered) | fpga/rtl/hdmi/*.sv |
+| 2026-05-09 | Add: video read port to dmem_sync (simulation) and dmem_qip_wrapper (FPGA M10K) — Port A mux, scalar priority, 1-cycle latency | rtl_trial/mem/dmem_sync.sv, fpga/rtl/mem/dmem_qip_wrapper.sv |
+| 2026-05-09 | Update: riscv_vpu_top_fpga.sv — add HDMI TX ports (24-bit D, CLK, HS, VS, DE, I2C SCL/SDA), wire u_hdmi; dmem video port wired | fpga/rtl/top/riscv_vpu_top_fpga.sv |
+| 2026-05-09 | Update: timing.sdc — add pclk 25 MHz constraint, HDMI output delay, I2C false paths | fpga/constraints/timing.sdc |
+| 2026-05-30 | Switch: FPGA output from HDMI (ADV7513) → VGA (ADV7123 DAC). vga_ctrl.sv replaces hdmi_ctrl.sv; de10_standard_top.sv replaces hdmi top | fpga/rtl/vga/vga_ctrl.sv, fpga/rtl/top/de10_standard_top.sv |
+| 2026-05-30 | Fix: riscv_vpu_top_fpga.sv — move pll_locked declaration before assign rst_n (ModelSim forward-ref issue) | fpga/rtl/top/riscv_vpu_top_fpga.sv |
+| 2026-05-30 | Add: DMEM MIF pre-init infrastructure — dmem_bank_b0-b3.v (per-lane wrappers with init_file), dmem_qip_wrapper.sv modified (generate→explicit), gen_dmem_mif.py, gen_lena_y_mif.py | fpga/rtl/mem/dmem_bank_b0-b3.v, fpga/rtl/mem/dmem_qip_wrapper.sv, fpga/gen_*.py |
+| 2026-05-30 | Add: FPGA firmware — dmem_lena.S (RGB→grayscale via VPU, no UART), vga_lena_y.S (trivial spin, Y pre-loaded) | fpga/sw/dmem_lena.S, fpga/sw/vga_lena_y.S |
+| 2026-05-31 | Add: Simulation testbenches — tb_dmem_lena_sim.sv (DMEM pre-init + VPU + Y check), tb_dmem_uniform_sim.sv (uniform-pixel structural debug), run_dmem_lena_sim.do, run_uniform_sim.do | bench/tb_dmem_lena_sim.sv, bench/tb_dmem_uniform_sim.sv |
+| 2026-05-31 | Hardware verified: VGA display working — Lena Y channel pre-loaded via MIF, image displayed on VGA monitor | FPGA hardware |
+| 2026-05-31 | **Fix (Critical): vproc_system_wrapper.sv — VLSU CSR stall bug.** vle8.v could fire during vsetvli's ST_CONFIG, seeing csr_vl_o=0, loading only 1 DMEM word → lanes 1-3 = 0 → R contribution lost for elements 4-15 of first VPU iteration. Fix: added `is_load_csr_stall = instr_valid && is_vls_load_raw && vsetvli_pending` to both `vls_fire` and `vpu_ready`. | fpga/rtl/vpu/vproc_system_wrapper.sv |
+| 2026-05-31 | Add: fpga/ip/dmem_bank_b0-b3.sv — behavioral simulation passthrough wrappers for dmem_bank_b0-b3.v | fpga/ip/dmem_bank_b0-b3.sv |

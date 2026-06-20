@@ -102,6 +102,10 @@ if __name__ == "__main__":
     dmem_file = sys.argv[1] if len(sys.argv) > 1 else \
                 os.path.join(SCRIPT_DIR, "lena_dmem_out.hex")
 
+    dmem_file = os.path.abspath(dmem_file)
+    # Output images go to the same directory as the hex dump
+    out_dir = os.path.dirname(dmem_file)
+
     if not os.path.exists(dmem_file):
         print(f"Error: {dmem_file} not found.")
         print("Run the simulation first with run_lena_sim.do, then call this script.")
@@ -134,13 +138,13 @@ if __name__ == "__main__":
         print("(No reference file — skipping comparison)")
 
     out_img = save_image(y_bytes,
-                         os.path.join(SCRIPT_DIR, "lena_vpu_output.png"),
+                         os.path.join(out_dir, "lena_vpu_output.png"),
                          size=(128, 128))
     make_comparison(
         os.path.join(SCRIPT_DIR, "lena_input.png"),
         os.path.join(SCRIPT_DIR, "lena_reference.png"),
         out_img,
-        os.path.join(SCRIPT_DIR, "lena_comparison.png"),
+        os.path.join(out_dir, "lena_comparison.png"),
     )
 
     sys.exit(0 if passed else 1)

@@ -53,6 +53,11 @@ module riscv_vpu_top (
     logic [ 3:0] vlsu_mem_be;
     logic [31:0] vlsu_mem_wdata;
     logic [31:0] vlsu_mem_rdata;
+    // lsu.sv o_ext_rdata is registered (1-cycle latency): data arrives on the
+    // cycle AFTER the address is presented — exactly as vproc_vec_lsu expects
+    // for a synchronous SRAM.  mem_ready is always 1; no back-pressure needed.
+    logic        vlsu_mem_ready;
+    assign vlsu_mem_ready = 1'b1;
 
     // ===== Scalar core =====
     single_cycle u_scalar_core (
@@ -128,6 +133,7 @@ module riscv_vpu_top (
         .vlsu_mem_be     (vlsu_mem_be),
         .vlsu_mem_wdata  (vlsu_mem_wdata),
         .vlsu_mem_rdata  (vlsu_mem_rdata),
+        .vlsu_mem_ready  (vlsu_mem_ready),
         .vlsu_busy_o     ()
     );
 

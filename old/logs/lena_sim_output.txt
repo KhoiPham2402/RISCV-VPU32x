@@ -1,0 +1,283 @@
+﻿Reading C:/intelFPGA_lite/18.1/modelsim_ase/tcl/vsim/pref.tcl
+
+# 10.5b
+
+# do run_lena_v3_sim.do
+# 
+# run_lena_v3_sim.do � Lena 128x128 RGB?Grayscale on riscv_vpu_top_v3
+# (5-stage pipelined RISC-V + sync DMEM + VPU)
+#
+# Run:
+#   vsim -c -do run_lena_v3_sim.do
+#
+# After simulation:
+#   python sw/benchmarks/lena_gray/reconstruct.py
+# 
+# if {![file exists work]} {
+#     vlib work
+# }
+# 
+# Copy lena IMEM so imem_sync's $readmemh("imem.hex") finds it
+# file copy -force sw/benchmarks/lena_gray/lena_imem.hex imem.hex
+# 
+# ===== Compile pipeline utility modules =====
+# vlog -sv \
+#     rtl/pipeline/full_adder.sv \
+#     rtl/pipeline/eight_bit_adder.sv \
+#     rtl/pipeline/adder.sv \
+#     rtl/pipeline/d_ff.sv \
+#     rtl/pipeline/register.sv \
+#     rtl/pipeline/decoder5to32.sv \
+#     rtl/pipeline/Regfile.sv \
+#     rtl/pipeline/register_file.sv \
+#     rtl/pipeline/mux2to1.sv \
+#     rtl/pipeline/mux2X1.sv \
+#     rtl/pipeline/mux4to1.sv \
+#     rtl/pipeline/mux8to1.sv \
+#     rtl/pipeline/mux32to1.sv \
+#     rtl/pipeline/immgen.sv \
+#     rtl/pipeline/mag_comparator.sv \
+#     rtl/pipeline/mag_comparator8.sv \
+#     rtl/pipeline/brc_comparator.sv \
+#     rtl/pipeline/brc.sv \
+#     rtl/pipeline/word_and.sv \
+#     rtl/pipeline/word_or.sv \
+#     rtl/pipeline/word_xor.sv \
+#     rtl/pipeline/barrel_shifter_32bit.sv \
+#     rtl/pipeline/barrel_shifter_32bit_left.sv \
+#     rtl/pipeline/alu.sv \
+#     rtl/pipeline/imem_sync.sv \
+#     rtl/pipeline/control_unit.sv \
+#     rtl/pipeline/pipelined_vpu.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 14:25:05 on May 07,2026
+# vlog -sv rtl/pipeline/full_adder.sv rtl/pipeline/eight_bit_adder.sv rtl/pipeline/adder.sv rtl/pipeline/d_ff.sv rtl/pipeline/register.sv rtl/pipeline/decoder5to32.sv rtl/pipeline/Regfile.sv rtl/pipeline/register_file.sv rtl/pipeline/mux2to1.sv rtl/pipeline/mux2X1.sv rtl/pipeline/mux4to1.sv rtl/pipeline/mux8to1.sv rtl/pipeline/mux32to1.sv rtl/pipeline/immgen.sv rtl/pipeline/mag_comparator.sv rtl/pipeline/mag_comparator8.sv rtl/pipeline/brc_comparator.sv rtl/pipeline/brc.sv rtl/pipeline/word_and.sv rtl/pipeline/word_or.sv rtl/pipeline/word_xor.sv rtl/pipeline/barrel_shifter_32bit.sv rtl/pipeline/barrel_shifter_32bit_left.sv rtl/pipeline/alu.sv rtl/pipeline/imem_sync.sv rtl/pipeline/control_unit.sv rtl/pipeline/pipelined_vpu.sv 
+# -- Compiling module full_adder
+# -- Compiling module eight_bit_adder
+# -- Compiling module adder
+# -- Compiling module d_ff
+# -- Compiling module register
+# -- Compiling module decoder5to32
+# -- Compiling module Regfile
+# -- Compiling module register_file
+# -- Compiling module mux2to1
+# -- Compiling module mux2X1
+# -- Compiling module mux4to1
+# -- Compiling module mux8to1
+# -- Compiling module mux32to1
+# -- Compiling module immgen
+# -- Compiling module mag_comparator
+# -- Compiling module mag_comparator8
+# -- Compiling module brc_comparator
+# -- Compiling module brc
+# -- Compiling module word_and
+# -- Compiling module word_or
+# -- Compiling module word_xor
+# -- Compiling module barrel_shifter_32bit
+# -- Compiling module barrel_shifter_32bit_left
+# -- Compiling module alu
+# -- Compiling module imem_sync
+# -- Compiling module control_unit
+# -- Compiling module pipelined_vpu
+# 
+# Top level modules:
+# 	pipelined_vpu
+# End time: 14:25:05 on May 07,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 
+# ===== Compile sync DMEM =====
+# vlog -sv rtl_trial/mem/dmem_sync.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 14:25:05 on May 07,2026
+# vlog -sv rtl_trial/mem/dmem_sync.sv 
+# -- Compiling module dmem_sync
+# 
+# Top level modules:
+# 	dmem_sync
+# End time: 14:25:05 on May 07,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 
+# ===== Compile VPU =====
+# vlog -sv \
+#     rtl/vproc_adder.sv \
+#     rtl/vproc_mul.sv \
+#     rtl/vproc_logic.sv \
+#     rtl/vproc_shifter.sv \
+#     rtl/vproc_compare.sv \
+#     rtl/vproc_compare_combine.sv \
+#     rtl/vproc_minmax.sv \
+#     rtl/vproc_reduction.sv \
+#     rtl/vproc_merge_unit.sv \
+#     rtl/vproc_processor_lane.sv \
+#     rtl/vproc_vregfile.sv \
+#     rtl/vproc_mux_cells.sv \
+#     rtl/vproc_mask_enable.sv \
+#     rtl/vproc_mask_write_buffer.sv \
+#     rtl/vproc_vcsr.sv \
+#     rtl/vproc_cfg_encoder.sv \
+#     rtl/vproc_cycle_counter.sv \
+#     rtl/vproc_vrf_addr_gen.sv \
+#     rtl/vproc_scalar_expand.sv \
+#     rtl/vproc_fsm.sv \
+#     rtl/vproc_fifo.sv \
+#     rtl/vproc_vdecoder.sv \
+#     rtl/vproc_vec_lsu.sv \
+#     rtl/vproc_system_wrapper.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 14:25:05 on May 07,2026
+# vlog -sv rtl/vproc_adder.sv rtl/vproc_mul.sv rtl/vproc_logic.sv rtl/vproc_shifter.sv rtl/vproc_compare.sv rtl/vproc_compare_combine.sv rtl/vproc_minmax.sv rtl/vproc_reduction.sv rtl/vproc_merge_unit.sv rtl/vproc_processor_lane.sv rtl/vproc_vregfile.sv rtl/vproc_mux_cells.sv rtl/vproc_mask_enable.sv rtl/vproc_mask_write_buffer.sv rtl/vproc_vcsr.sv rtl/vproc_cfg_encoder.sv rtl/vproc_cycle_counter.sv rtl/vproc_vrf_addr_gen.sv rtl/vproc_scalar_expand.sv rtl/vproc_fsm.sv rtl/vproc_fifo.sv rtl/vproc_vdecoder.sv rtl/vproc_vec_lsu.sv rtl/vproc_system_wrapper.sv 
+# -- Compiling module vproc_adder
+# -- Compiling module vproc_mul
+# -- Compiling module vproc_logic
+# -- Compiling module vproc_shifter
+# -- Compiling module vproc_compare
+# -- Compiling module vproc_compare_combine
+# -- Compiling module vproc_minmax
+# -- Compiling module vproc_reduction
+# -- Compiling module vproc_merge_unit
+# -- Compiling module vproc_processor_lane
+# -- Compiling module vproc_vregfile
+# -- Compiling module vproc_mux2to1
+# -- Compiling module vproc_mux8to1
+# -- Compiling module vproc_mux4to1_w4
+# -- Compiling module vproc_mask_enable
+# -- Compiling module vproc_mask_write_buffer
+# -- Compiling module vproc_vcsr
+# -- Compiling module vproc_cfg_encoder
+# -- Compiling module vproc_cycle_counter
+# -- Compiling module vproc_vrf_addr_gen
+# -- Compiling module vproc_scalar_expand
+# -- Compiling module vproc_fsm
+# -- Compiling module vproc_fifo
+# -- Compiling module vproc_vdecoder
+# -- Compiling module vproc_vec_lsu
+# -- Compiling module vproc_system_wrapper
+# 
+# Top level modules:
+# 	vproc_compare_combine
+# 	vproc_mux8to1
+# 	vproc_system_wrapper
+# End time: 14:25:06 on May 07,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# 
+# ===== Compile Top + Testbench =====
+# vlog -sv \
+#     rtl/riscv_vpu_top_v3.sv \
+#     bench/tb_lena_gray_v3.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 14:25:06 on May 07,2026
+# vlog -sv rtl/riscv_vpu_top_v3.sv bench/tb_lena_gray_v3.sv 
+# -- Compiling module riscv_vpu_top_v3
+# -- Compiling module tb_lena_gray_v3
+# 
+# Top level modules:
+# 	tb_lena_gray_v3
+# End time: 14:25:06 on May 07,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 
+# ===== Simulate =====
+# vsim -voptargs=+acc work.tb_lena_gray_v3
+# vsim -voptargs="+acc" work.tb_lena_gray_v3 
+# Start time: 14:25:06 on May 07,2026
+# Loading sv_std.std
+# Loading work.tb_lena_gray_v3
+# Loading work.riscv_vpu_top_v3
+# Loading work.pipelined_vpu
+# Loading work.imem_sync
+# Loading work.control_unit
+# Loading work.immgen
+# Loading work.register_file
+# Loading work.decoder5to32
+# Loading work.Regfile
+# Loading work.register
+# Loading work.d_ff
+# Loading work.mux32to1
+# Loading work.mux2to1
+# Loading work.mux4to1
+# Loading work.brc
+# Loading work.mag_comparator
+# Loading work.mag_comparator8
+# Loading work.brc_comparator
+# Loading work.mux2X1
+# Loading work.alu
+# Loading work.word_xor
+# Loading work.adder
+# Loading work.eight_bit_adder
+# Loading work.full_adder
+# Loading work.word_or
+# Loading work.word_and
+# Loading work.barrel_shifter_32bit
+# Loading work.barrel_shifter_32bit_left
+# Loading work.mux8to1
+# Loading work.dmem_sync
+# Loading work.vproc_system_wrapper
+# Loading work.vproc_vdecoder
+# Loading work.vproc_fifo
+# Loading work.vproc_fsm
+# Loading work.vproc_scalar_expand
+# Loading work.vproc_cfg_encoder
+# Loading work.vproc_cycle_counter
+# Loading work.vproc_vrf_addr_gen
+# Loading work.vproc_vcsr
+# Loading work.vproc_mask_enable
+# Loading work.vproc_mux4to1_w4
+# Loading work.vproc_reduction
+# Loading work.vproc_mask_write_buffer
+# Loading work.vproc_vec_lsu
+# Loading work.vproc_vregfile
+# Loading work.vproc_processor_lane
+# Loading work.vproc_adder
+# Loading work.vproc_mul
+# Loading work.vproc_logic
+# Loading work.vproc_shifter
+# Loading work.vproc_merge_unit
+# Loading work.vproc_compare
+# Loading work.vproc_minmax
+# ** Warning: (vsim-3017) rtl/pipeline/pipelined_vpu.sv(448): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_brc File: rtl/pipeline/brc.sv
+# ** Warning: (vsim-3722) rtl/pipeline/pipelined_vpu.sv(448): [TFMPC] - Missing connection for port 'o_br_less'.
+# ** Warning: (vsim-3017) rtl/pipeline/alu.sv(28): [TFMPC] - Too few port connections. Expected 5, found 4.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/ADD File: rtl/pipeline/adder.sv
+# ** Warning: (vsim-3722) rtl/pipeline/alu.sv(28): [TFMPC] - Missing connection for port 'cout'.
+# ** Warning: (vsim-3017) rtl/pipeline/adder.sv(11): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/ADD/BYTE0 File: rtl/pipeline/eight_bit_adder.sv
+# ** Warning: (vsim-3722) rtl/pipeline/adder.sv(11): [TFMPC] - Missing connection for port 'cnr'.
+# ** Warning: (vsim-3017) rtl/pipeline/adder.sv(16): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/ADD/BYTE1 File: rtl/pipeline/eight_bit_adder.sv
+# ** Warning: (vsim-3722) rtl/pipeline/adder.sv(16): [TFMPC] - Missing connection for port 'cnr'.
+# ** Warning: (vsim-3017) rtl/pipeline/adder.sv(21): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/ADD/BYTE2 File: rtl/pipeline/eight_bit_adder.sv
+# ** Warning: (vsim-3722) rtl/pipeline/adder.sv(21): [TFMPC] - Missing connection for port 'cnr'.
+# ** Warning: (vsim-3017) rtl/pipeline/adder.sv(26): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/ADD/BYTE3 File: rtl/pipeline/eight_bit_adder.sv
+# ** Warning: (vsim-3722) rtl/pipeline/adder.sv(26): [TFMPC] - Missing connection for port 'cnr'.
+# ** Warning: (vsim-3017) rtl/pipeline/alu.sv(44): [TFMPC] - Too few port connections. Expected 6, found 5.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_lena_gray_v3/dut/u_core/u_alu/COMP File: rtl/pipeline/brc.sv
+# ** Warning: (vsim-3722) rtl/pipeline/alu.sv(44): [TFMPC] - Missing connection for port 'o_br_taken'.
+# 
+# run -all
+# =================================================================
+#   Lena Grayscale �?? RISC-V VPU v3 Benchmark
+#   128x128 pixels, SEW=8, BT.601 via vmulhu.vx
+#   5-stage pipelined core + sync DMEM + VPU
+#   DMEM init: C:\CapstoneProject2\riscv_vpu\sw\benchmarks\lena_gray\lena_dmem_init.hex
+# =================================================================
+#   [TB] DMEM loaded.  R[0..3]=e0e2e3df  G[0..3]=89878885  B[0..3]=807a7a73
+#   [Cycle 34839] j done confirmed �?? draining VPU/VLSU...
+#   [Cycle 34871] drain complete.
+# =================================================================
+#   Cycles  : 34840
+#   Y[0..3] : xx xx xx xx  (DMEM word 12288)
+#   Y[4..7] : a1 9f a0 9d
+#   Y[8..11]: 9c 9b 9a 99
+#   Y[12..15]:9b a1 a6 ab
+#   scalar t1=00008000 t2=00000000 t3=00000000 t4=00000000
+#   VPU CSR: vl=16  vtype=000000c0
+#   DMEM dumped �?? C:\CapstoneProject2\riscv_vpu\sw\benchmarks\lena_gray\lena_dmem_out.hex
+# =================================================================
+#   Next step: python sw/benchmarks/lena_gray/reconstruct.py
+# =================================================================
+# ** Note: $finish    : bench/tb_lena_gray_v3.sv(158)
+#    Time: 348755 ns  Iteration: 1  Instance: /tb_lena_gray_v3
+# End time: 14:25:34 on May 07,2026, Elapsed time: 0:00:28
+# Errors: 0, Warnings: 14

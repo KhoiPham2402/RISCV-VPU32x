@@ -1,0 +1,5 @@
+QUARTUS_VERSION = "18.1"
+DATE = "2026-05-09"
+
+# Quartus II 64-Bit Project File
+PROJECT_REVISION = "riscv_vpu"

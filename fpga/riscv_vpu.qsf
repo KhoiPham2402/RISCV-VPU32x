@@ -1,0 +1,36 @@
+# riscv_vpu.qsf — Quartus Settings File for RISC-V VPU on DE10-Standard
+# Device: Cyclone V 5CSEBA6U23I7 (DE10-Standard)
+
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CSEBA6U23I7
+set_global_assignment -name TOP_LEVEL_ENTITY de10_standard_top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+# ── Compiler options ──────────────────────────────────────────────────────────
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name OPTIMIZATION_MODE "BALANCED"
+set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT NORMAL
+set_global_assignment -name SMART_RECOMPILE ON
+
+# ── Source files ──────────────────────────────────────────────────────────────
+# Load all RTL via sources.tcl
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE sources.tcl
+
+# Pin assignments
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE constraints/de10_standard_pins.tcl
+
+# ── Timing constraints ────────────────────────────────────────────────────────
+set_global_assignment -name SDC_FILE constraints/timing.sdc
+
+# ── IP cores ──────────────────────────────────────────────────────────────────
+set_global_assignment -name QIP_FILE ip/dmem_bank/dmem_bank.qip
+set_global_assignment -name QIP_FILE ip/pll/pll.qip
+
+# ── SignalTap (optional, for debug) ───────────────────────────────────────────
+# set_global_assignment -name ENABLE_SIGNALTAP ON
+# set_global_assignment -name USE_SIGNALTAP_FILE output_files/riscv_vpu.stp

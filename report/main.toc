@@ -1,0 +1,206 @@
+\babel@toc {english}{}\relax 
+\babel@toc {english}{}\relax 
+\contentsline {chapter}{List of Abbreviations}{viii}{section*.4}%
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Motivation and Background}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Problem Statement}{2}{section.1.2}%
+\contentsline {paragraph}{ISA Complexity.}{2}{paragraph*.6}%
+\contentsline {paragraph}{Hazard Management.}{2}{paragraph*.7}%
+\contentsline {paragraph}{Area and Power Tradeoffs.}{3}{paragraph*.8}%
+\contentsline {paragraph}{Masked Operations.}{3}{paragraph*.9}%
+\contentsline {paragraph}{Memory Interface.}{3}{paragraph*.10}%
+\contentsline {section}{\numberline {1.3}Objectives}{3}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Contributions}{4}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Thesis Organisation}{5}{section.1.5}%
+\contentsline {chapter}{\numberline {2}Background and Related Work}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}RISC-V Instruction Set Architecture}{7}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}History and Design Philosophy}{7}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Base ISA: RV32I}{7}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}M Extension: Integer Multiplication and Division}{8}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}Privileged Specification and CSRs}{8}{subsection.2.1.4}%
+\contentsline {section}{\numberline {2.2}Vector Processing Fundamentals}{8}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}Flynn's Taxonomy and Parallelism Classes}{8}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Key Vector Concepts}{9}{subsection.2.2.2}%
+\contentsline {paragraph}{Vector Length and VLEN.}{9}{paragraph*.11}%
+\contentsline {paragraph}{Standard Element Width (SEW).}{9}{paragraph*.12}%
+\contentsline {paragraph}{Length Multiplier (LMUL).}{9}{paragraph*.13}%
+\contentsline {paragraph}{Masking.}{9}{paragraph*.14}%
+\contentsline {paragraph}{Tail Behaviour.}{9}{paragraph*.15}%
+\contentsline {subsection}{\numberline {2.2.3}Performance Advantages of Vector Processing}{10}{subsection.2.2.3}%
+\contentsline {section}{\numberline {2.3}RISC-V Vector Extension (RVV)}{10}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Overview and Design Goals}{10}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Vector CSRs}{10}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}Vector Register File}{11}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}Instruction Categories}{11}{subsection.2.3.4}%
+\contentsline {subsection}{\numberline {2.3.5}Zve32x Subset}{11}{subsection.2.3.5}%
+\contentsline {section}{\numberline {2.4}ASIC Design Methodology}{12}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}RTL Design Phase}{12}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Logic Synthesis}{12}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}Static Timing Analysis}{12}{subsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.4.4}Place and Route}{13}{subsection.2.4.4}%
+\contentsline {subsection}{\numberline {2.4.5}Physical Verification: DRC and LVS}{13}{subsection.2.4.5}%
+\contentsline {section}{\numberline {2.5}Related Work}{13}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}Ara: Scalable RVV Vector Processor in 22nm FD-SOI}{13}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}CVA6 / Ariane}{14}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}Vitruvius+}{14}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.4}Hwacha}{14}{subsection.2.5.4}%
+\contentsline {subsection}{\numberline {2.5.5}Comparative Analysis}{14}{subsection.2.5.5}%
+\contentsline {section}{\numberline {2.6}Summary}{15}{section.2.6}%
+\contentsline {chapter}{\numberline {3}System Specification}{16}{chapter.3}%
+\contentsline {section}{\numberline {3.1}System Requirements}{16}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Functional Requirements}{16}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Non-Functional Requirements}{17}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}ISA Specification}{17}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Instruction Encoding Conventions}{17}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Supported Instructions by Category}{18}{subsection.3.2.2}%
+\contentsline {section}{\numberline {3.3}Vector Configuration}{20}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}VLEN and Register Geometry}{20}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}SEW Encoding}{20}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}LMUL Encoding}{20}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}VLMAX Formula}{21}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}vtype Register Layout}{21}{subsection.3.3.5}%
+\contentsline {section}{\numberline {3.4}Memory Architecture}{22}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Harvard Architecture Overview}{22}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Instruction Memory (IMEM)}{23}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Data Memory (DMEM)}{24}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}Address Decode}{24}{subsection.3.4.4}%
+\contentsline {section}{\numberline {3.5}UART Interface Specification}{25}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Physical Framing}{25}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}MMIO Register Map}{25}{subsection.3.5.2}%
+\contentsline {subsubsection}{STAT Register (offset +0x04)}{25}{subsubsection*.32}%
+\contentsline {subsubsection}{TXDAT Register (offset +0x08)}{26}{subsubsection*.34}%
+\contentsline {subsubsection}{RXDAT Register (offset +0x0C)}{26}{subsubsection*.35}%
+\contentsline {subsection}{\numberline {3.5.3}Firmware Programming Model}{26}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}Timing Constraints}{27}{subsection.3.5.4}%
+\contentsline {section}{\numberline {3.6}Performance Requirements}{27}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Target Clock Frequency}{27}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Area Budget}{27}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Power Estimation}{28}{subsection.3.6.3}%
+\contentsline {chapter}{\numberline {4}Hardware Design}{29}{chapter.4}%
+\contentsline {section}{\numberline {4.1}System Architecture Overview}{29}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Top-Level Integration}{29}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Clock and Reset Distribution}{30}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Signal Interface Summary}{31}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Scalar RISC-V Core}{31}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Pipeline Structure}{32}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Hazard Detection}{33}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Data Forwarding}{33}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}VPU Dispatch Protocol}{34}{subsection.4.2.4}%
+\contentsline {section}{\numberline {4.3}VPU Architecture}{34}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Instruction Decoder}{35}{subsection.4.3.1}%
+\contentsline {subsubsection}{ctrl\_bus Layout}{36}{subsubsection*.40}%
+\contentsline {subsubsection}{Decoding Categories}{36}{subsubsection*.42}%
+\contentsline {subsubsection}{Compare Group Decode}{37}{subsubsection*.43}%
+\contentsline {subsection}{\numberline {4.3.2}Instruction FIFO}{37}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Execution FSM}{38}{subsection.4.3.3}%
+\contentsline {subsubsection}{State Diagram}{38}{subsubsection*.44}%
+\contentsline {subsubsection}{Output Encoding}{39}{subsubsection*.46}%
+\contentsline {subsubsection}{Cycle Count per Instruction Type}{39}{subsubsection*.48}%
+\contentsline {subsection}{\numberline {4.3.4}Vector Register File}{40}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}VRF Address Generator}{40}{subsection.4.3.5}%
+\contentsline {subsection}{\numberline {4.3.6}Execution Lane}{41}{subsection.4.3.6}%
+\contentsline {subsubsection}{Lane Datapath}{42}{subsubsection*.49}%
+\contentsline {subsection}{\numberline {4.3.7}Arithmetic and Logic Units}{43}{subsection.4.3.7}%
+\contentsline {subsubsection}{Adder (\texttt {vproc\_adder})}{43}{subsubsection*.51}%
+\contentsline {subsubsection}{Multiplier (\texttt {vproc\_mul})}{43}{subsubsection*.52}%
+\contentsline {subsubsection}{Shifter (\texttt {vproc\_shifter})}{44}{subsubsection*.53}%
+\contentsline {subsubsection}{Logic Unit (\texttt {vproc\_logic})}{44}{subsubsection*.54}%
+\contentsline {subsubsection}{Comparator (\texttt {vproc\_compare})}{44}{subsubsection*.55}%
+\contentsline {subsubsection}{Min/Max Unit (\texttt {vproc\_minmax})}{44}{subsubsection*.56}%
+\contentsline {subsection}{\numberline {4.3.8}Reduction Unit}{44}{subsection.4.3.8}%
+\contentsline {subsubsection}{Design Rationale}{44}{subsubsection*.57}%
+\contentsline {subsubsection}{Interface Protocol}{45}{subsubsection*.58}%
+\contentsline {subsubsection}{Accumulator State Machine}{45}{subsubsection*.59}%
+\contentsline {subsubsection}{Accumulator Combinatorial Logic}{45}{subsubsection*.60}%
+\contentsline {subsection}{\numberline {4.3.9}Vector Load/Store Unit}{46}{subsection.4.3.9}%
+\contentsline {subsubsection}{Address Calculation}{47}{subsubsection*.62}%
+\contentsline {subsubsection}{Load Path}{47}{subsubsection*.63}%
+\contentsline {subsubsection}{Store Path}{47}{subsubsection*.64}%
+\contentsline {subsubsection}{Masked Store and Tail Suppression}{48}{subsubsection*.65}%
+\contentsline {subsubsection}{Hazard Avoidance}{49}{subsubsection*.67}%
+\contentsline {section}{\numberline {4.4}UART Controller}{49}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}8N1 Framing}{49}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}MMIO Register Map}{50}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.4.3}Integration and TL-UL Interface}{50}{subsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.4.4}FIFO Depth and Overflow Behaviour}{50}{subsection.4.4.4}%
+\contentsline {section}{\numberline {4.5}Memory Subsystem}{51}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}Instruction Memory (\texttt {imem\_sync})}{51}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}Data Memory (\texttt {dmem\_sync})}{51}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}Memory Address Map}{52}{subsection.4.5.3}%
+\contentsline {subsection}{\numberline {4.5.4}Harvard Architecture Tradeoffs}{52}{subsection.4.5.4}%
+\contentsline {section}{\numberline {4.6}Chapter Summary}{53}{section.4.6}%
+\contentsline {chapter}{\numberline {5}Software Design}{55}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Development Toolchain and Build System}{55}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Compiler and Assembler}{55}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Build Flow}{56}{subsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.1.3}The \texttt {elf2hex\_lines.py} Converter}{57}{subsection.5.1.3}%
+\contentsline {subsection}{\numberline {5.1.4}Makefile Targets}{57}{subsection.5.1.4}%
+\contentsline {section}{\numberline {5.2}Memory Model and Linker Script}{58}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Harvard Architecture Implications}{58}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Linker Script}{58}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Stack Size and Calling Convention}{59}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}Firmware Architecture}{59}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Startup and Initialisation}{59}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}UART Register Map}{59}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}The \texttt {recv\_block} Subroutine}{60}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}The \texttt {uart\_tx\_byte} Subroutine}{60}{subsection.5.3.4}%
+\contentsline {subsection}{\numberline {5.3.5}The \texttt {send\_block} Subroutine}{61}{subsection.5.3.5}%
+\contentsline {section}{\numberline {5.4}Application: BT.601 Grayscale Conversion}{62}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Background: ITU-R BT.601 Luma Formula}{62}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Mapping to \texttt {vmulhu.vx}}{62}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Full Instruction Sequence}{62}{subsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.4.4}Throughput Analysis}{63}{subsection.5.4.4}%
+\contentsline {subsection}{\numberline {5.4.5}Accuracy Analysis}{64}{subsection.5.4.5}%
+\contentsline {section}{\numberline {5.5}UART Communication Protocol}{64}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Physical Layer Parameters}{64}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Image Streaming Protocol}{64}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Echo and Acknowledgement}{65}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Timing Budget}{65}{subsection.5.5.4}%
+\contentsline {section}{\numberline {5.6}Summary}{65}{section.5.6}%
+\contentsline {chapter}{\numberline {6}Verification and Evaluation}{67}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Verification Methodology}{67}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}V-Model Approach}{67}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}Simulation Environment}{67}{subsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.1.3}Regression Gate Policy}{68}{subsection.6.1.3}%
+\contentsline {section}{\numberline {6.2}Unit-Level Verification}{68}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Adder Unit (\texttt {vproc\_adder})}{68}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Multiplier Unit (\texttt {vproc\_mul})}{68}{subsection.6.2.2}%
+\contentsline {subsection}{\numberline {6.2.3}Reduction Unit (\texttt {vproc\_reduction})}{69}{subsection.6.2.3}%
+\contentsline {subsection}{\numberline {6.2.4}Vector LSU (\texttt {vproc\_vec\_lsu})}{69}{subsection.6.2.4}%
+\contentsline {section}{\numberline {6.3}Instruction Regression (tb\_vproc\_all\_instr)}{70}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Test Structure}{70}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Coverage Table}{70}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Representative Test Vectors}{71}{subsection.6.3.3}%
+\contentsline {section}{\numberline {6.4}System Integration Verification}{71}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}End-to-End Image Benchmark (\texttt {tb\_lena\_gray})}{71}{subsection.6.4.1}%
+\contentsline {section}{\numberline {6.5}Performance Analysis}{73}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}VPU Throughput Model}{73}{subsection.6.5.1}%
+\contentsline {subsection}{\numberline {6.5.2}Benchmark Cycle Counts}{74}{subsection.6.5.2}%
+\contentsline {subsection}{\numberline {6.5.3}Speedup Over Scalar Baseline}{74}{subsection.6.5.3}%
+\contentsline {subsection}{\numberline {6.5.4}Bottleneck Identification}{74}{subsection.6.5.4}%
+\contentsline {section}{\numberline {6.6}FPGA Synthesis and Timing Analysis}{75}{section.6.6}%
+\contentsline {subsection}{\numberline {6.6.1}Target Device and Constraints}{75}{subsection.6.6.1}%
+\contentsline {subsection}{\numberline {6.6.2}Final Synthesis Results}{75}{subsection.6.6.2}%
+\contentsline {subsection}{\numberline {6.6.3}Optimisation History}{76}{subsection.6.6.3}%
+\contentsline {paragraph}{Root cause of 16.44~MHz:}{76}{paragraph*.83}%
+\contentsline {paragraph}{Serial reduction redesign:}{76}{paragraph*.84}%
+\contentsline {paragraph}{FIFO combinational loop:}{76}{paragraph*.85}%
+\contentsline {paragraph}{Remaining slow-model violation:}{76}{paragraph*.86}%
+\contentsline {subsection}{\numberline {6.6.4}Area Breakdown Estimate}{77}{subsection.6.6.4}%
+\contentsline {section}{\numberline {6.7}Known Limitations and Future Evaluation Work}{77}{section.6.7}%
+\contentsline {subsection}{\numberline {6.7.1}Open Issues}{77}{subsection.6.7.1}%
+\contentsline {subsection}{\numberline {6.7.2}Coverage Gaps}{78}{subsection.6.7.2}%
+\contentsline {section}{\numberline {6.8}Summary}{78}{section.6.8}%
+\contentsline {chapter}{\numberline {7}Conclusion and Future Work}{79}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Summary of Work}{79}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Contributions}{80}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Limitations}{81}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Future Work}{82}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}ASIC Synthesis and Physical Design}{82}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Formal and Property-Based Verification}{82}{subsection.7.4.2}%
+\contentsline {subsection}{\numberline {7.4.3}Instruction Set Extensions}{83}{subsection.7.4.3}%
+\contentsline {subsection}{\numberline {7.4.4}Multi-Lane Scaling}{83}{subsection.7.4.4}%
+\contentsline {subsection}{\numberline {7.4.5}Out-of-Order VPU Execution with Scoreboard}{84}{subsection.7.4.5}%
+\contentsline {subsection}{\numberline {7.4.6}Clock Gating and Power Optimisation}{84}{subsection.7.4.6}%
+\contentsline {section}{\numberline {7.5}Closing Remarks}{84}{section.7.5}%
+\contentsfinish 

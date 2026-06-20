@@ -2,17 +2,12 @@ module imem (
     input  logic [31:0] pc,
     output logic [31:0] instr
 );
+    // 8 KB = 2048 × 32-bit words; rom_addr from pc[12:2]
+    reg [31:0] inst_mem [0:2047];
+    wire [10:0] rom_addr = pc[12:2];
 
-// Memory for Instructions (8KB) (2048 instructions)
-	reg [31:0] inst_mem [89:0];
-	wire [10:0] rom_addr = pc[12:2]; //pc increment in steps of 4
-	
-	assign instr = inst_mem[rom_addr]; 
-	initial begin
-	 	$readmemh("D:\\khoipham\\riscv\\milestone3\\02_test\\instructions.hex",inst_mem);
-		//$readmemh("C:\\Users\\khoi-laptop\\Documents\\CTMT\\MINDSTONE_2\\riscv_occ\\02_test);
-		//$readmemh("imem.mem",inst_mem);
-	end
- 
+    assign instr = inst_mem[rom_addr];
+
+    initial $readmemh("imem.hex", inst_mem);
 
 endmodule

@@ -1,0 +1,144 @@
+% bkthesis.sty — HCMUT thesis style (English, redesigned cover)
+% Original by thanhhungqb@gmail.com — modified for English Capstone Project
+
+\ProvidesPackage{bkthesis}
+
+\RequirePackage{graphicx}
+\RequirePackage[vietnamese,english]{babel}
+\RequirePackage{geometry}
+
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{indentfirst}
+
+\def\thesislayout{
+	\geometry{
+		a4paper,
+		total={160mm,247mm},
+		left=30mm,
+		top=20mm,
+	}
+}
+
+% ── Metadata commands ─────────────────────────────────────────────────────────
+\newcommand{\@sdeptname}{FACULTY OF ELECTRICAL AND ELECTRONICS ENGINEERING}
+\newcommand{\csdeptname}[1]{\renewcommand{\@sdeptname}{#1}}
+
+\newcommand{\@stuname}{Student Name}
+\newcommand{\cstuname}[1]{\renewcommand{\@stuname}{#1}}
+
+\newcommand{\@stuid}{0000000}
+\newcommand{\csstuid}[1]{\renewcommand{\@stuid}{#1}}
+
+\newcommand{\@sSupervise}{Dr. Supervisor}
+\newcommand{\csSupervise}[1]{\renewcommand{\@sSupervise}{#1}}
+
+\newcommand{\@sReviewer}{}
+\newcommand{\csReviewer}[1]{\renewcommand{\@sReviewer}{#1}}
+
+\newcommand{\@sCouncil}{}
+\newcommand{\csCouncil}[1]{\renewcommand{\@sCouncil}{#1}}
+
+\newcommand{\@ttime}{\today}
+\newcommand{\cttime}[1]{\renewcommand{\@ttime}{#1}}
+
+\newcommand{\@rname}{CAPSTONE PROJECT}
+\newcommand{\crname}[1]{\renewcommand{\@rname}{#1}}
+
+% ── smashminipage ─────────────────────────────────────────────────────────────
+\newsavebox\thesmashminipage
+\newenvironment{smashminipage}
+  {\begin{lrbox}{\thesmashminipage}\begin{minipage}[t]{\textwidth}}
+  {\end{minipage}\end{lrbox}\smash{\usebox{\thesmashminipage}}\clearpage}
+
+% ── Cover page ────────────────────────────────────────────────────────────────
+\def\coverpage{
+\pagestyle{empty}
+\begin{smashminipage}
+
+% Double border
+\begin{tikzpicture}[remember picture, overlay]
+  \draw[line width=1pt]
+      ($(current page.north west)+(3.0cm,-2.0cm)$)
+      rectangle
+      ($(current page.south east)+(-1.5cm,1.5cm)$);
+  \draw[line width=3pt]
+      ($(current page.north west)+(3.15cm,-2.15cm)$)
+      rectangle
+      ($(current page.south east)+(-1.65cm,1.65cm)$);
+\end{tikzpicture}
+
+\begin{center}
+
+% ── University header ─────────────────────────────────────────────────────────
+{\fontsize{13}{18}\selectfont\bfseries
+  VIETNAM NATIONAL UNIVERSITY HO CHI MINH CITY\\[3pt]
+  HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY\\[3pt]
+  \@sdeptname
+}\\[1.0cm]
+
+% ── Logo ─────────────────────────────────────────────────────────────────────
+\IfFileExists{../image/01_logobachkhoasang.png}%
+  {\includegraphics[height=3.2cm]{../image/01_logobachkhoasang.png}}%
+  {\includegraphics[height=3.2cm,draft]{LogoBK.jpg}}%  silently skip if missing
+\\[0.9cm]
+
+% ── Top rule ─────────────────────────────────────────────────────────────────
+{\color{black}\rule{0.72\textwidth}{1.5pt}}\\[0.7cm]
+
+% ── Report type ──────────────────────────────────────────────────────────────
+{\fontsize{14}{18}\selectfont \@rname}\\[0.5cm]
+
+% ── Title ────────────────────────────────────────────────────────────────────
+{\fontsize{22}{28}\selectfont\bfseries
+  \parbox{13cm}{\centering\@title}
+}\\[0.7cm]
+
+% ── Bottom rule ──────────────────────────────────────────────────────────────
+{\color{black}\rule{0.72\textwidth}{1.5pt}}\\[1.6cm]
+
+% ── Info block (right-aligned labels, left-aligned values) ───────────────────
+\begin{tabular}{r@{\enspace}l}
+  \textbf{Supervisor:} & \@sSupervise \\[6pt]
+  \textbf{Student:}    & \@stuname \\[4pt]
+  \textbf{Student ID:} & \@stuid \\
+\end{tabular}\\[2.2cm]
+
+% ── Date ─────────────────────────────────────────────────────────────────────
+{\fontsize{13}{1}\selectfont\bfseries
+  HO CHI MINH CITY,\enspace\MakeUppercase{\@ttime}
+}
+
+\end{center}
+\end{smashminipage}
+}
+
+% ── Front-matter environments ─────────────────────────────────────────────────
+\makeatletter
+\newenvironment{abstract}{
+  \titlepage\null\vfil
+  \@beginparpenalty\@lowpenalty
+  \begin{center}
+    \bfseries Abstract
+    \@endparpenalty\@M
+  \end{center}}
+ {\par\vfil\null\endtitlepage}
+\makeatother
+
+\makeatletter
+\newenvironment{acknowledgments}{
+  \titlepage\null\vfil\small
+  \begin{center}
+    {\bfseries Acknowledgements\vspace{-.5em}\vspace{\z@}}
+  \end{center}
+  \quotation}{}
+\makeatother
+
+\makeatletter
+\newenvironment{declaration}{
+  \small
+  \begin{center}
+    {\bfseries Declaration of Originality\vspace{-.5em}\vspace{\z@}}
+  \end{center}
+  \quotation}{}
+\makeatother

@@ -1,0 +1,545 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="1">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ================================================================ -->
+    <!-- TOP-LEVEL CHIP BOUNDARY -->
+    <!-- ================================================================ -->
+    <mxCell id="2" value="riscv_vpu_top_pipeline"
+      style="swimlane;startSize=44;fillColor=#1a237e;fontColor=#ffffff;strokeColor=#0d47a1;fontSize=20;fontStyle=1;swimlaneLine=1;rounded=1;arcSize=1;align=left;spacingLeft=20;shadow=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="10" y="10" width="2360" height="1670" as="geometry"/>
+    </mxCell>
+
+    <!-- Subtitle -->
+    <mxCell id="2b" value="RV32IM scalar core  +  Zve32x Vector Processing Unit  |  VLEN=128b  ·  SEW=8/16/32  ·  LMUL=1–8  ·  4 execution lanes"
+      style="text;fontSize=13;fontColor=#bbdefb;align=left;spacingLeft=20;"
+      vertex="1" parent="2">
+      <mxGeometry x="0" y="44" width="2360" height="24" as="geometry"/>
+    </mxCell>
+
+    <!-- ================================================================ -->
+    <!-- SCALAR CORE BLOCK                                                 -->
+    <!-- ================================================================ -->
+    <mxCell id="10" value="single_cycle  |  Scalar RISC-V Core"
+      style="swimlane;startSize=38;fillColor=#e3f2fd;strokeColor=#1565c0;fontStyle=1;fontSize=14;fontColor=#0d47a1;rounded=1;arcSize=2;shadow=1;"
+      vertex="1" parent="2">
+      <mxGeometry x="20" y="78" width="490" height="1492" as="geometry"/>
+    </mxCell>
+
+    <!-- IMEM -->
+    <mxCell id="11" value="&lt;b&gt;IMEM&lt;/b&gt;&lt;br/&gt;8 KB · read-only · $readmemh&lt;br/&gt;&lt;font color='#546e7a'&gt;imem.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;html=1;shadow=0;"
+      vertex="1" parent="10">
+      <mxGeometry x="130" y="55" width="220" height="75" as="geometry"/>
+    </mxCell>
+
+    <!-- PC Register + Adder -->
+    <mxCell id="19" value="&lt;b&gt;PC Register&lt;/b&gt; + PC+4 Adder&lt;br/&gt;&lt;font color='#546e7a'&gt;register.sv · adder.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="55" width="200" height="75" as="geometry"/>
+    </mxCell>
+
+    <!-- ImmGen -->
+    <mxCell id="12" value="&lt;b&gt;ImmGen&lt;/b&gt;&lt;br/&gt;&lt;font color='#546e7a'&gt;immgen.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="175" width="200" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- Register File -->
+    <mxCell id="13" value="&lt;b&gt;Register File&lt;/b&gt;&lt;br/&gt;32 × 32-bit&lt;br/&gt;&lt;font color='#546e7a'&gt;register_file.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="250" y="165" width="210" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- Control Unit -->
+    <mxCell id="14" value="&lt;b&gt;Control Unit&lt;/b&gt;&lt;br/&gt;&lt;font color='#546e7a'&gt;control_unit.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="290" width="200" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- ALU -->
+    <mxCell id="15" value="&lt;b&gt;ALU&lt;/b&gt; + Barrel Shifter&lt;br/&gt;&lt;font color='#546e7a'&gt;alu.sv · barrel_shifter_32bit.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#e0f2f1;strokeColor=#00695c;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="130" y="390" width="230" height="65" as="geometry"/>
+    </mxCell>
+
+    <!-- Branch Unit -->
+    <mxCell id="16" value="&lt;b&gt;Branch Unit&lt;/b&gt;&lt;br/&gt;&lt;font color='#546e7a'&gt;brc.sv · brc_comparator.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="395" width="200" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- LSU -->
+    <mxCell id="17" value="&lt;b&gt;LSU&lt;/b&gt; (Load / Store Unit)&lt;br/&gt;&lt;font color='#546e7a'&gt;lsu.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#e0f2f1;strokeColor=#00695c;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="130" y="510" width="230" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- DMEM -->
+    <mxCell id="18" value="&lt;b&gt;DMEM&lt;/b&gt;&lt;br/&gt;64 KB · Dual-Port&lt;br/&gt;Scalar port  +  VLSU ext-port&lt;br/&gt;&lt;font color='#546e7a'&gt;(array inside lsu.sv)&lt;/font&gt;"
+      style="shape=cylinder3;fillColor=#c8e6c9;strokeColor=#2e7d32;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="10">
+      <mxGeometry x="130" y="620" width="230" height="115" as="geometry"/>
+    </mxCell>
+
+    <!-- VPU issue interface label -->
+    <mxCell id="19b" value="&lt;b&gt;VPU Issue Interface&lt;/b&gt;&lt;br/&gt;→ instr_valid&lt;br/&gt;→ instruction [31:0]&lt;br/&gt;→ rs1_data, rs2_data [31:0]&lt;br/&gt;← vpu_ready · vpu_cfg_done&lt;br/&gt;← vpu_vl_remain [31:0]"
+      style="rounded=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;fontSize=10;html=1;align=left;spacingLeft=6;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="795" width="440" height="105" as="geometry"/>
+    </mxCell>
+
+    <!-- CSR interface label -->
+    <mxCell id="19c" value="&lt;b&gt;CSR Interface&lt;/b&gt;&lt;br/&gt;→ csr_addr [11:0]&lt;br/&gt;← csr_rdata [31:0]  (vl / vtype / vlenb)"
+      style="rounded=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;fontSize=10;html=1;align=left;spacingLeft=6;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="920" width="440" height="70" as="geometry"/>
+    </mxCell>
+
+    <!-- VLSU memory interface label -->
+    <mxCell id="19d" value="&lt;b&gt;VLSU Memory Interface&lt;/b&gt;&lt;br/&gt;← req · we · addr [31:0] · be [3:0] · wdata [31:0]&lt;br/&gt;→ rdata_q [31:0] · mem_ready_int&lt;br/&gt;Reads: 1-cycle latency (dmem_sync-equivalent)&lt;br/&gt;Writes: combinatorial ack"
+      style="rounded=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=10;html=1;align=left;spacingLeft=6;"
+      vertex="1" parent="10">
+      <mxGeometry x="20" y="1005" width="440" height="100" as="geometry"/>
+    </mxCell>
+
+    <!-- ================================================================ -->
+    <!-- VPU BLOCK                                                         -->
+    <!-- ================================================================ -->
+    <mxCell id="20" value="vproc_system_wrapper_p  |  Pipelined Vector Processing Unit"
+      style="swimlane;startSize=44;fillColor=#f3e5f5;strokeColor=#6a1b9a;fontStyle=1;fontSize=14;fontColor=#4a148c;rounded=1;arcSize=1;shadow=1;"
+      vertex="1" parent="2">
+      <mxGeometry x="540" y="78" width="1800" height="1492" as="geometry"/>
+    </mxCell>
+
+    <!-- ── DECODE / ISSUE ROW ── -->
+    <mxCell id="21" value="&lt;b&gt;vproc_vdecoder&lt;/b&gt;&lt;br/&gt;32-bit insn → 48-bit ctrl_bus&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_vdecoder.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="65" width="220" height="85" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="23" value="&lt;b&gt;vproc_fifo&lt;/b&gt;&lt;br/&gt;Instruction Queue  depth=8&lt;br/&gt;CTRL[47:0] · RS1[31:0] · IMM[31:0]&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_fifo.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=0;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="295" y="60" width="230" height="95" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="24" value="&lt;b&gt;ctrl_r  [47:0]&lt;/b&gt;&lt;br/&gt;Latched instruction control&lt;br/&gt;vs1·vs2·vd·funct6·flags·vtype"
+      style="rounded=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="590" y="65" width="220" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="26" value="&lt;b&gt;vproc_fsm_p&lt;/b&gt;&lt;br/&gt;IDLE → EXEC → DRAIN → IDLE&lt;br/&gt;+WIDENL/H · MASKING · REDUCTION&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_fsm_p.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffccbc;strokeColor=#bf360c;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="875" y="55" width="240" height="105" as="geometry"/>
+    </mxCell>
+
+    <!-- ── CONTROL ROW ── -->
+    <mxCell id="30" value="&lt;b&gt;vproc_vcsr&lt;/b&gt;&lt;br/&gt;vl · vtype · vlenb CSRs&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_vcsr.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="205" width="185" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="31" value="&lt;b&gt;vproc_cfg_encoder&lt;/b&gt;&lt;br/&gt;vsetvl / vsetvli encoding&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_cfg_encoder.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="220" y="205" width="195" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="32" value="&lt;b&gt;vproc_cycle_counter&lt;/b&gt;&lt;br/&gt;Elements/cycle · cycles_total&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_cycle_counter.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="430" y="205" width="200" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="33" value="&lt;b&gt;vproc_vrf_addr_gen&lt;/b&gt;&lt;br/&gt;vs1 / vs2 / vd  base + offset&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_vrf_addr_gen.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="645" y="205" width="215" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="34" value="&lt;b&gt;vproc_scalar_expand ×2&lt;/b&gt;&lt;br/&gt;rs1 → vector width&lt;br/&gt;imm → vector width&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_scalar_expand.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="875" y="200" width="210" height="90" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="35" value="&lt;b&gt;vproc_mask_enable ×4&lt;/b&gt;&lt;br/&gt;Per-element mask gate (vm=0)&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_mask_enable.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="1100" y="205" width="210" height="80" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="36" value="&lt;b&gt;vproc_mask_write_buffer&lt;/b&gt;&lt;br/&gt;Mask commit buffer&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_mask_write_buffer.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="1325" y="205" width="215" height="80" as="geometry"/>
+    </mxCell>
+
+    <!-- ── VECTOR REGISTER FILE ── -->
+    <mxCell id="40" value="Vector Register File  —  32 × 128-bit  (vproc_vregfile.sv × 4 lanes)"
+      style="swimlane;startSize=30;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;fontSize=13;fontColor=#1b5e20;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="340" width="1400" height="130" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="41" value="&lt;b&gt;vrf_lane0&lt;/b&gt;&lt;br/&gt;bits [31:0]  ·  elements 0–3"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;html=1;"
+      vertex="1" parent="40">
+      <mxGeometry x="15" y="38" width="310" height="72" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="42" value="&lt;b&gt;vrf_lane1&lt;/b&gt;&lt;br/&gt;bits [63:32]  ·  elements 4–7"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;html=1;"
+      vertex="1" parent="40">
+      <mxGeometry x="355" y="38" width="310" height="72" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="43" value="&lt;b&gt;vrf_lane2&lt;/b&gt;&lt;br/&gt;bits [95:64]  ·  elements 8–11"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;html=1;"
+      vertex="1" parent="40">
+      <mxGeometry x="695" y="38" width="310" height="72" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="44" value="&lt;b&gt;vrf_lane3&lt;/b&gt;&lt;br/&gt;bits [127:96]  ·  elements 12–15"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;html=1;"
+      vertex="1" parent="40">
+      <mxGeometry x="1035" y="38" width="340" height="72" as="geometry"/>
+    </mxCell>
+
+    <!-- Merge + Mux (right of VRF) -->
+    <mxCell id="45" value="&lt;b&gt;vproc_merge_unit&lt;/b&gt;&lt;br/&gt;VMERGE / VMV.V.*&lt;br/&gt;&lt;hr/&gt;&lt;b&gt;vproc_mux_cells&lt;/b&gt;&lt;br/&gt;ALU result selection MUX"
+      style="rounded=1;fillColor=#e0f7fa;strokeColor=#006064;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="1440" y="340" width="330" height="130" as="geometry"/>
+    </mxCell>
+
+    <!-- ── p1 PIPELINE REGISTER ── -->
+    <mxCell id="50" value="&lt;b&gt;p1  Pipeline Register&lt;/b&gt;  —  1-cycle stage between VRF-read and Execute  (p1_rs1 · p1_rs2 · p1_vd_addr · p1_vrf_wren · p1_lane_we · p1_elems_curr)"
+      style="rounded=1;fillColor=#fffde7;strokeColor=#f57f17;fontStyle=1;fontSize=12;fontColor=#bf360c;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="525" width="1750" height="50" as="geometry"/>
+    </mxCell>
+
+    <!-- ── EXECUTION LANES ── -->
+    <mxCell id="55" value="vproc_processor_lane  ×4   (4 lanes run in parallel  ·  each lane handles 4 elements of SEW=8  /  2 of SEW=16  /  1 of SEW=32)"
+      style="swimlane;startSize=36;fillColor=#e0f2f1;strokeColor=#00695c;fontStyle=1;fontSize=12;fontColor=#004d40;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="620" width="1750" height="490" as="geometry"/>
+    </mxCell>
+
+    <!-- Lane 0 detailed -->
+    <mxCell id="56" value="&lt;b&gt;Lane 0&lt;/b&gt;  ·  elem 0–3"
+      style="swimlane;startSize=26;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;"
+      vertex="1" parent="55">
+      <mxGeometry x="15" y="46" width="400" height="428" as="geometry"/>
+    </mxCell>
+    <mxCell id="56a" value="&lt;b&gt;vproc_adder&lt;/b&gt;&lt;br/&gt;VADD · VSUB · VRSUB"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="34" width="378" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="56b" value="&lt;b&gt;vproc_mul&lt;/b&gt;&lt;br/&gt;VMUL · VMULH · VMULHU · VMULHSU"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="82" width="378" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="56c" value="&lt;b&gt;vproc_shifter&lt;/b&gt;&lt;br/&gt;VSLL · VSRL · VSRA"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="130" width="378" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="56d" value="&lt;b&gt;vproc_logic&lt;/b&gt;&lt;br/&gt;VAND · VOR · VXOR"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="178" width="378" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="56e" value="&lt;b&gt;vproc_compare&lt;/b&gt;  +  vproc_compare_combine&lt;br/&gt;VMSEQ · VMSNE · VMSLT · VMSLTU · VMSLEU · VMSGT · VMSGTU"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="226" width="378" height="46" as="geometry"/>
+    </mxCell>
+    <mxCell id="56f" value="&lt;b&gt;vproc_minmax&lt;/b&gt;&lt;br/&gt;VMIN · VMINU · VMAX · VMAXU"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="280" width="378" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="56g" value="&lt;b&gt;vproc_reduction&lt;/b&gt;&lt;br/&gt;VREDSUM · VREDMAX · VREDMAXU · VREDMIN · VREDMINU"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="56">
+      <mxGeometry x="10" y="328" width="378" height="42" as="geometry"/>
+    </mxCell>
+
+    <!-- Lane 1 -->
+    <mxCell id="57" value="&lt;b&gt;Lane 1&lt;/b&gt;  ·  elem 4–7"
+      style="swimlane;startSize=26;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;"
+      vertex="1" parent="55">
+      <mxGeometry x="445" y="46" width="400" height="428" as="geometry"/>
+    </mxCell>
+    <mxCell id="57a" value="vproc_adder&lt;br/&gt;vproc_mul&lt;br/&gt;vproc_shifter&lt;br/&gt;vproc_logic&lt;br/&gt;vproc_compare  +  vproc_compare_combine&lt;br/&gt;vproc_minmax&lt;br/&gt;vproc_reduction&lt;br/&gt;&lt;br/&gt;&lt;i&gt;Identical to Lane 0&lt;/i&gt;"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="57">
+      <mxGeometry x="10" y="34" width="378" height="374" as="geometry"/>
+    </mxCell>
+
+    <!-- Lane 2 -->
+    <mxCell id="58" value="&lt;b&gt;Lane 2&lt;/b&gt;  ·  elem 8–11"
+      style="swimlane;startSize=26;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;"
+      vertex="1" parent="55">
+      <mxGeometry x="875" y="46" width="400" height="428" as="geometry"/>
+    </mxCell>
+    <mxCell id="58a" value="vproc_adder&lt;br/&gt;vproc_mul&lt;br/&gt;vproc_shifter&lt;br/&gt;vproc_logic&lt;br/&gt;vproc_compare  +  vproc_compare_combine&lt;br/&gt;vproc_minmax&lt;br/&gt;vproc_reduction&lt;br/&gt;&lt;br/&gt;&lt;i&gt;Identical to Lane 0&lt;/i&gt;"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="58">
+      <mxGeometry x="10" y="34" width="378" height="374" as="geometry"/>
+    </mxCell>
+
+    <!-- Lane 3 -->
+    <mxCell id="59" value="&lt;b&gt;Lane 3&lt;/b&gt;  ·  elem 12–15"
+      style="swimlane;startSize=26;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;"
+      vertex="1" parent="55">
+      <mxGeometry x="1305" y="46" width="430" height="428" as="geometry"/>
+    </mxCell>
+    <mxCell id="59a" value="vproc_adder&lt;br/&gt;vproc_mul&lt;br/&gt;vproc_shifter&lt;br/&gt;vproc_logic&lt;br/&gt;vproc_compare  +  vproc_compare_combine&lt;br/&gt;vproc_minmax&lt;br/&gt;vproc_reduction&lt;br/&gt;&lt;br/&gt;&lt;i&gt;Identical to Lane 0&lt;/i&gt;"
+      style="rounded=1;fillColor=#ffffff;strokeColor=#00796b;fontSize=10;html=1;" vertex="1" parent="59">
+      <mxGeometry x="10" y="34" width="408" height="374" as="geometry"/>
+    </mxCell>
+
+    <!-- ── VLSU ── -->
+    <mxCell id="60" value="&lt;b&gt;vproc_vec_lsu&lt;/b&gt;  —  Vector Load / Store Unit&lt;br/&gt;4 words/transfer  ·  SEW=8/16/32  ·  unit-stride  ·  mask-aware&lt;br/&gt;Load prefetch architecture  ·  vd_addr latched at fire cycle&lt;br/&gt;&lt;font color='#546e7a'&gt;vproc_vec_lsu.sv&lt;/font&gt;"
+      style="rounded=1;fillColor=#e8eaf6;strokeColor=#283593;fontStyle=1;fontSize=11;html=1;"
+      vertex="1" parent="20">
+      <mxGeometry x="20" y="1165" width="460" height="105" as="geometry"/>
+    </mxCell>
+
+    <!-- VLSU Mem Handshake -->
+    <mxCell id="61" value="&lt;b&gt;VLSU Memory Handshake&lt;/b&gt;  (dmem_sync-equivalent)&lt;br/&gt;Write:  ack combinatorial  (vlsu_mem_we ? vlsu_mem_req)&lt;br/&gt;Read:   ack 1-cycle later  (vlsu_rd_pending_r)&lt;br/&gt;Read data latched → vlsu_rdata_q [31:0]"
+      style="rounded=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=10;html=1;align=left;spacingLeft=6;"
+      vertex="1" parent="20">
+      <mxGeometry x="500" y="1165" width="460" height="105" as="geometry"/>
+    </mxCell>
+
+    <!-- ================================================================ -->
+    <!-- EDGES — within VPU (parent=20)                                    -->
+    <!-- ================================================================ -->
+
+    <!-- vdecoder → FIFO -->
+    <mxCell id="e1" value="ctrl_bus [47:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeWidth=2;strokeColor=#e65100;"
+      edge="1" parent="20" source="21" target="23">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- FIFO → ctrl_r -->
+    <mxCell id="e2" value="fifo_ctrl_out [47:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeWidth=2;strokeColor=#f9a825;"
+      edge="1" parent="20" source="23" target="24">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- FIFO → FSM -->
+    <mxCell id="e3" value="fifo_data_valid"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeWidth=2;strokeColor=#bf360c;"
+      edge="1" parent="20" source="23" target="26">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- FSM → ctrl_r (latch_ctrl_en, loopback) -->
+    <mxCell id="e4" value="latch_ctrl_en · pop_ready"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#bf360c;exitX=0.3;exitY=1;entryX=0.8;entryY=1;"
+      edge="1" parent="20" source="26" target="24">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="948" y="195"/>
+          <mxPoint x="762" y="195"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- FSM → cycle_counter (counter_start) -->
+    <mxCell id="e5" value="counter_start · vrf_wren"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#bf360c;exitX=0.5;exitY=1;entryX=0.5;entryY=0;"
+      edge="1" parent="20" source="26" target="32">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- FSM → vrf_addr_gen (offset_en) -->
+    <mxCell id="e5b" value="s/d_offset_en · offset_reset"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#bf360c;exitX=0.5;exitY=1;entryX=0.7;entryY=0;"
+      edge="1" parent="20" source="26" target="33">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- VRF → p1 register (read data bus) -->
+    <mxCell id="e6" value="rs1_data · rs2_data [127:0]  (4 × 32-bit per lane)"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=4;strokeColor=#1565c0;exitX=0.25;exitY=1;entryX=0.25;entryY=0;"
+      edge="1" parent="20" source="40" target="50">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- mask data VRF→ mask_enable -->
+    <mxCell id="e6b" value="v0_mask [127:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#388e3c;exitX=0.9;exitY=0;entryX=0.5;entryY=1;"
+      edge="1" parent="20" source="40" target="35">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- p1 register → execution lanes -->
+    <mxCell id="e7" value="p1_rs1 · p1_rs2 · p1_lane_we · p1_vd_addr · p1_vrf_wren"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=4;strokeColor=#1565c0;"
+      edge="1" parent="20" source="50" target="55">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- execution lanes → VRF write-back -->
+    <mxCell id="e8" value="wb_result [127:0] · vrf_we · p1_vd_addr"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;strokeWidth=3;strokeColor=#00695c;exitX=0.06;exitY=0;entryX=0.06;entryY=1;"
+      edge="1" parent="20" source="55" target="40">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="45" y="608"/>
+          <mxPoint x="45" y="472"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- VLSU → VRF: store VRF read (vs2_addr mux) -->
+    <mxCell id="e9" value="vlsu_vrf_raddr → vs2_addr_to_vrf"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#283593;exitX=0.1;exitY=0;entryX=0.12;entryY=1;"
+      edge="1" parent="20" source="60" target="40">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="78" y="1140"/>
+          <mxPoint x="78" y="472"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- VLSU → VRF: load write-back -->
+    <mxCell id="e10" value="vrf_we · vrf_waddr · vrf_wdata[0..3]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;strokeWidth=2;strokeColor=#2e7d32;exitX=0.22;exitY=0;entryX=0.22;entryY=1;"
+      edge="1" parent="20" source="60" target="40">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="160" y="1120"/>
+          <mxPoint x="160" y="472"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- vrf_addr_gen → VRF (address bus) -->
+    <mxCell id="e11" value="vs1_addr · vs2_addr · vd_addr"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;dashed=1;strokeColor=#e65100;exitX=0.5;exitY=1;entryX=0.6;entryY=0;"
+      edge="1" parent="20" source="33" target="40">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- VLSU ↔ mem handshake -->
+    <mxCell id="e12" value="mem_req · we · addr · be · wdata&lt;br/&gt;← rdata_q · mem_ready_int"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=9;html=1;strokeWidth=2;strokeColor=#283593;exitX=1;exitY=0.5;entryX=0;entryY=0.5;"
+      edge="1" parent="20" source="60" target="61">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- ================================================================ -->
+    <!-- EDGES — Scalar ↔ VPU interface (parent=2)                         -->
+    <!-- ================================================================ -->
+
+    <!-- Issue interface: scalar → VPU -->
+    <mxCell id="e20" value="instr_valid  ·  instruction [31:0]  ·  rs1_data [31:0]  ·  rs2_data [31:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=4;strokeColor=#4a148c;exitX=1;exitY=0.18;entryX=0;entryY=0.12;"
+      edge="1" parent="2" source="10" target="20">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Handshake back: VPU → scalar -->
+    <mxCell id="e21" value="vpu_ready  ·  vpu_cfg_done  ·  vpu_vl_remain [31:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=3;strokeColor=#4a148c;dashed=1;exitX=0;exitY=0.28;entryX=1;entryY=0.28;"
+      edge="1" parent="2" source="20" target="10">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- CSR: scalar → VPU -->
+    <mxCell id="e22" value="csr_addr [11:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=2;strokeColor=#6a1b9a;exitX=1;exitY=0.42;entryX=0;entryY=0.42;"
+      edge="1" parent="2" source="10" target="20">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- CSR rdata: VPU → scalar -->
+    <mxCell id="e23" value="csr_rdata [31:0]  (vl / vtype / vlenb)"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=2;strokeColor=#6a1b9a;dashed=1;exitX=0;exitY=0.52;entryX=1;entryY=0.52;"
+      edge="1" parent="2" source="20" target="10">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- VLSU mem bus: VPU → scalar DMEM -->
+    <mxCell id="e24" value="vlsu_mem_req · we · addr [31:0] · be [3:0] · wdata [31:0]"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=4;strokeColor=#283593;exitX=0;exitY=0.72;entryX=1;entryY=0.72;"
+      edge="1" parent="2" source="20" target="10">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- VLSU rdata: scalar → VPU -->
+    <mxCell id="e25" value="vlsu_rdata_q [31:0]  ·  vlsu_mem_ready_int"
+      style="edgeStyle=orthogonalEdgeStyle;fontSize=10;html=1;strokeWidth=3;strokeColor=#283593;dashed=1;exitX=1;exitY=0.82;entryX=0;entryY=0.82;"
+      edge="1" parent="2" source="10" target="20">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- ================================================================ -->
+    <!-- LEGEND                                                            -->
+    <!-- ================================================================ -->
+    <mxCell id="leg" value="Legend"
+      style="swimlane;startSize=28;fillColor=#fafafa;strokeColor=#9e9e9e;fontStyle=1;fontSize=13;"
+      vertex="1" parent="2">
+      <mxGeometry x="20" y="1595" width="2330" height="55" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="l1" value="Memory (IMEM/DMEM/VRF)"
+      style="rounded=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="10" y="10" width="220" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l2" value="Control / FSM / Decode"
+      style="rounded=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="245" y="10" width="200" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l3" value="Pipeline FSM"
+      style="rounded=1;fillColor=#ffccbc;strokeColor=#bf360c;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="460" y="10" width="180" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l4" value="Datapath / Execution"
+      style="rounded=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="655" y="10" width="200" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l5" value="p1 Pipeline Register"
+      style="rounded=1;fillColor=#fffde7;strokeColor=#f57f17;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="870" y="10" width="200" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l6" value="VLSU / Memory Interface"
+      style="rounded=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="1085" y="10" width="210" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l7" value="Merge / Mux"
+      style="rounded=1;fillColor=#e0f7fa;strokeColor=#006064;fontSize=10;" vertex="1" parent="leg">
+      <mxGeometry x="1310" y="10" width="160" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l8" value="━━━━  Data bus (bold)"
+      style="text;fontSize=10;fontColor=#1565c0;fontStyle=1;" vertex="1" parent="leg">
+      <mxGeometry x="1490" y="10" width="200" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l9" value="- - - -  Control signal"
+      style="text;fontSize=10;fontColor=#bf360c;" vertex="1" parent="leg">
+      <mxGeometry x="1705" y="10" width="190" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="l10" value="━━━━  Scalar ↔ VPU bus"
+      style="text;fontSize=10;fontColor=#4a148c;fontStyle=1;" vertex="1" parent="leg">
+      <mxGeometry x="1910" y="10" width="220" height="34" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>

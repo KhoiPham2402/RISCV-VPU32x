@@ -1,0 +1,58 @@
+\begin{thebibliography}{10}
+
+\bibitem{simd-intro}
+G.~Larson, ``{The History of SIMD: From Early MMX to Modern AVX-512},'' {\em
+  IEEE Spectrum}, 2022.
+
+\bibitem{riscv-spec-2019}
+{RISC-V Foundation}, {\em {The RISC-V Instruction Set Manual, Volume I:
+  Unprivileged ISA, Version 20191213}}, 2019.
+
+\bibitem{patterson2020risc}
+D.~A. Patterson and A.~Waterman, {\em {The RISC-V Reader: An Open Architecture
+  Atlas}}.
+\newblock Strawberry Canyon, 2017.
+
+\bibitem{rvv-spec-1-0}
+{RISC-V International}, {\em {RISC-V ``V'' Vector Extension, Version 1.0}},
+  2021.
+
+\bibitem{weste2010cmos}
+N.~H.~E. Weste and D.~M. Harris, {\em {CMOS VLSI Design: A Circuits and Systems
+  Perspective}}.
+\newblock Pearson Education, 4th~ed., 2010.
+
+\bibitem{harris2012digital}
+D.~M. Harris and S.~L. Harris, {\em {Digital Design and Computer
+  Architecture}}.
+\newblock Morgan Kaufmann, 2nd~ed., 2012.
+
+\bibitem{ara2020}
+M.~Cavalcante, F.~Schuiki, F.~Zaruba, M.~Schaffner, and L.~Benini, ``{Ara: A
+  1-GHz+ Scalable and Energy-Efficient RISC-V Vector Processor with
+  Multi-Precision Floating-Point Support in 22-nm FD-SOI},'' in {\em IEEE
+  Transactions on Very Large Scale Integration (VLSI) Systems}, vol.~28,
+  pp.~530--543, 2020.
+
+\bibitem{cva6}
+F.~Zaruba and L.~Benini, ``{The Cost of Application-Class Processing: Energy
+  and Performance Analysis of a Linux-Ready 1.7-GHz 64-Bit RISC-V Core in 22-nm
+  FDSOI Technology},'' in {\em IEEE Transactions on Very Large Scale
+  Integration (VLSI) Systems}, vol.~27, pp.~2629--2640, 2019.
+
+\bibitem{vitruvius2021}
+F.~Minervini, O.~Palomino, D.~Ruiz, R.~Serrano, C.~Hernandez, J.~Labarta, and
+  M.~Kovac, ``{Vitruvius+: An Area-Efficient RISC-V Decoupled Vector
+  Coprocessor for High Performance Computing Applications},'' {\em ACM
+  Transactions on Architecture and Code Optimization}, vol.~18, no.~4, 2021.
+
+\bibitem{hwacha2015}
+Y.~Lee, A.~Waterman, H.~Cook, B.~Zimmer, B.~Keller, A.~Chang, J.~Bailey,
+  M.~Blagojevic, D.~Bruns-Smith, R.~G. Dreslinski, {\em et~al.}, ``{An Agile
+  Approach to Building RISC-V Microprocessors},'' in {\em IEEE Micro}, vol.~36,
+  pp.~8--20, 2016.
+
+\bibitem{de10standard}
+{Terasic Inc.}, {\em {DE10-Standard User Manual}}, 2017.
+
+\end{thebibliography}

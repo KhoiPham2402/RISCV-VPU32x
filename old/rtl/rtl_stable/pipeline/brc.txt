@@ -1,0 +1,45 @@
+module brc (
+	input logic [31:0]	i_rs1_data,
+	input logic [31:0]	i_rs2_data,
+	input logic 		i_br_un,
+	input logic [2:0] 	func3,
+	
+	output logic		o_br_less,
+	output logic 		o_br_taken
+);
+
+	logic o_lt;
+	logic o_gt;
+	logic br_less;
+	logic o_br_equal;
+	logic sel;
+	
+	assign sel = (i_rs1_data[31] ^ i_rs2_data[31]) & i_br_un;
+	assign o_br_less = br_less;
+	mag_comparator comp32 (	.in1 (i_rs1_data),
+				.in2 	(i_rs2_data),
+				.i_eq 	(1'b1),
+				.i_lt	(1'b0),
+				.i_gt	(1'b0),
+				.o_eq 	(o_br_equal),
+				.o_gt 	(o_gt),
+				.o_lt	(o_lt));
+	mux2X1	MUX2to1	(	.in0 (o_lt),
+				.in1 (o_gt),
+				.sel (sel),
+				.out (br_less));
+	// Chọn điều kiện nhảy theo func3 – đúng spec RISC-V Vol.1
+    always_comb begin
+        case (func3)
+            3'b000: o_br_taken =  o_br_equal;    // beq
+            3'b001: o_br_taken = !o_br_equal;    // bne
+            3'b100: o_br_taken =  br_less;    // blt  / bltu
+            3'b101: o_br_taken = !br_less;    // bge  / bgeu
+            3'b110: o_br_taken =  br_less;    // bltu (i_br_un = 1)
+            3'b111: o_br_taken = !br_less;    // bgeu (i_br_un = 1)
+            default: o_br_taken = 1'b0;
+        endcase
+    end
+
+endmodule							
+

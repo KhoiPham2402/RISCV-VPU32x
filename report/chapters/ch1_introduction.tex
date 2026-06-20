@@ -1,0 +1,254 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation and Background}
+\label{sec:motivation}
+
+The past decade has witnessed an unprecedented surge in data-parallel workloads driven
+by machine learning inference, computer vision, digital signal processing, and scientific
+simulation. Modern neural-network inference passes millions of multiply-accumulate
+operations over tensors that may contain thousands of elements of identical type.
+A classical scalar processor that fetches, decodes, and executes one operation per
+clock cycle cannot amortise the instruction-fetch overhead across these repeated
+computations; it spends the majority of its energy on control flow rather than useful
+arithmetic. The fundamental insight that motivates vector processing is simple: if the
+same arithmetic operation is to be applied to a long sequence of operands, a single
+instruction can describe the entire sequence, and the hardware can overlap the execution
+of individual elements in time, in space, or both.
+
+Vector processing architectures have a history stretching back to the Cray-1 vector
+supercomputer of 1976, yet they have undergone a dramatic renaissance in the era of
+deep learning. Modern CPU vector extensions --- Intel AVX-512, ARM SVE/SVE2, and
+RISC-V RVV --- share the same conceptual heritage: a set of wide registers holding
+multiple data elements and an instruction vocabulary that operates on all elements
+simultaneously \cite{simd-intro}. These extensions achieve substantial performance
+improvements on workloads such as image convolution, matrix multiplication, and
+activation functions, often by factors of four to sixteen compared to scalar code on
+the same core, with minimal additional area overhead when the vector width is chosen
+judiciously.
+
+The RISC-V open instruction set architecture has emerged as a compelling foundation for
+custom silicon development \cite{riscv-spec-2019, patterson2020risc}. Its permissive
+licensing model, its separation of mandatory base ISA from optional standard extensions,
+and its active ecosystem of open-source toolchains and verification infrastructure make
+it uniquely attractive for academic and start-up design teams that cannot afford
+proprietary ISA licenses. The RISC-V Vector Extension (RVV), standardised as version
+1.0 in 2021 \cite{rvv-spec-1-0}, defines a length-agnostic programming model that
+allows the same binary to run correctly on vector units ranging from 128-bit to 65536-bit
+register widths, simply by rerunning the \texttt{vsetvli} configuration instruction
+at runtime. This future-proof abstraction is particularly valuable for \gls{asic}
+design because the hardware can be dimensioned to the minimum area required for the
+target workload without invalidating software compiled for wider implementations.
+
+The choice between \gls{fpga} prototyping and \gls{asic} tapeout reflects a fundamental
+engineering tradeoff. An \gls{fpga} provides rapid iteration and in-system debugging
+at the cost of power efficiency, achievable clock frequency, and configurable logic
+resources. An \gls{asic}, once fabricated, consumes three to five times less power and
+operates at two to four times higher frequency for equivalent logic, because every
+transistor is sized and placed for a single purpose \cite{weste2010cmos}. For embedded
+inference at the edge --- smart cameras, wearable health monitors, autonomous vehicle
+perception nodes --- the power envelope is critical, and \gls{asic} implementation is
+the only viable path. Producing tapeout-ready \gls{rtl} therefore has direct industrial
+relevance beyond the academic context of this thesis.
+
+Writing \gls{rtl} that is not merely functionally correct in simulation but also fully
+synthesisable, timing-clean, and free of latches and X-propagation paths is a
+substantially harder problem than simulation-only design. Synthesisers reject
+\texttt{initial} blocks, non-synthesisable system tasks, and asynchronous latches.
+Static timing analysis tools expose combinational paths that violate setup and hold
+constraints. Any path that is not properly constrained can silently cause functional
+failures after place-and-route. This thesis takes the position that a vector processor
+should be designed to these tighter standards from the outset, rather than retrofitted
+after the fact.
+
+\section{Problem Statement}
+\label{sec:problem}
+
+Designing a standards-compliant vector processor presents multiple interacting
+technical challenges that make it substantially more complex than a straightforward
+scalar core.
+
+\paragraph{ISA Complexity.}
+The RVV Zve32x subset encompasses more than fifty distinct instruction encodings across
+arithmetic, logical, shift, compare, reduction, and load/store categories. Each
+instruction must be correctly decoded from a 32-bit encoding that shares the OP-V
+opcode but varies along three independent axes: \texttt{funct6} (6 bits specifying
+the operation), \texttt{funct3} (3 bits selecting the operand type: VV, VX, or VI),
+and \texttt{vm} (1 bit enabling or disabling masking). The decoder must distil this
+information into a compact control word that drives downstream execution units over
+potentially many clock cycles, because vector operations execute once per element rather
+than once per instruction.
+
+\paragraph{Hazard Management.}
+A combined scalar--vector system requires hazard resolution at two distinct time
+scales. The scalar pipeline must detect read-after-write hazards between consecutive
+instructions on a cycle-by-cycle basis using forwarding and load-use stalling.
+Concurrently, the scalar core must stall when it encounters a vector instruction while
+the \gls{vpu} instruction queue is full, and it must stall again when a
+\texttt{vsetvl}/\texttt{vsetvli} instruction requires the \gls{vpu} to complete its
+configuration and write the computed vector length back to a scalar register. Both
+stall conditions must be detected and propagated through the pipeline without corrupting
+any in-flight instructions.
+
+\paragraph{Area and Power Tradeoffs.}
+A multi-lane \gls{vpu} with VLEN=128 bits and four 32-bit lanes executing simultaneously
+yields peak throughput but occupies proportionally more area. For an ASIC tapeout
+constrained by educational budget, the single-lane implementation trades peak throughput
+for area efficiency, completing one 32-bit element per cycle. The reduction unit is
+particularly sensitive: a na\"ive reduction tree with sixteen adders connected in a
+combinational chain produces a long critical path that limits \texttt{Fmax}. The
+design must replace this with a serialised approach that achieves correct results while
+remaining timing-clean.
+
+\paragraph{Masked Operations.}
+RVV masking allows each vector element to be conditionally suppressed based on the
+contents of vector register \texttt{v0}. For compare instructions that \emph{produce}
+a mask result, the implementation must accumulate per-element bits into a mask buffer
+and commit the result atomically at the end of the instruction, rather than writing
+partial results to the register file mid-execution. This requires an additional FSM
+state (\texttt{ST\_FINAL\_MASKING}) and a separate mask write buffer, both of which
+add control complexity without adding arithmetic throughput.
+
+\paragraph{Memory Interface.}
+A Harvard memory architecture with separate instruction and data memories simplifies
+timing by eliminating structural hazards on the memory bus, but requires careful
+arbitration when both the scalar \gls{lsu} and the vector \gls{vlsu} wish to access
+data memory simultaneously. The dual-port memory solution must be synthesisable (i.e.,
+mappable to block-RAM primitives) and must not introduce dead cycles into either
+the scalar or vector memory access path.
+
+\section{Objectives}
+\label{sec:objectives}
+
+This project has the following specific technical objectives:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Implement the \texttt{rv32im\_zicsr\_zve32x\_zvl128b} ISA.}
+        Deliver a scalar core supporting the RV32I base, the M multiplication/division
+        extension, and the Zicsr privileged instruction extension, integrated with a
+        vector coprocessor that implements the full Zve32x minimum vector subset at
+        VLEN=128 bits.
+
+  \item \textbf{Five-stage pipelined scalar core.}
+        The scalar core shall implement IF, ID, EX, MEM, and WB stages with
+        EX$\rightarrow$MEM$\rightarrow$WB data forwarding and load-use hazard stalling,
+        achieving CPI approaching 1.0 on non-memory, non-vector code.
+
+  \item \textbf{Single-lane, multi-cycle VPU with full Zve32x coverage.}
+        The \gls{vpu} shall process one SEW-wide element per clock cycle via a single
+        execution lane containing an adder, multiplier, shifter, logic, comparator,
+        min/max, and reduction sub-unit. It shall support SEW=8/16/32 and
+        LMUL=1/2/4/8.
+
+  \item \textbf{Tapeout-viable RTL.}
+        All modules in the \texttt{/rtl/} hierarchy shall be synthesisable: no
+        \texttt{initial} blocks, no \texttt{\$display} in synthesisable paths, no
+        combinational latches, synchronous active-low reset throughout, and all widths
+        parameterised to avoid hardcoded VLEN/SEW bit slices.
+
+  \item \textbf{Comprehensive functional verification.}
+        A directed testbench suite shall achieve 172/172 test cases passing before any
+        design change is considered complete. Integration benchmarks shall include
+        BT.601 RGB-to-grayscale conversion on a 128$\times$128 image and general
+        matrix multiplication, both verified at pixel/element level.
+
+  \item \textbf{UART-based end-to-end system test.}
+        A UART peripheral mapped at \texttt{0xFF000000} shall enable real-data
+        streaming from a host computer to the running system. Firmware shall receive
+        raw image data, invoke the vector grayscale pipeline, and return the luminance
+        channel, providing an end-to-end integration test beyond pure simulation.
+\end{enumerate}
+
+\section{Contributions}
+\label{sec:contributions}
+
+The following are the original contributions of this thesis:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{A complete open-source Zve32x implementation in SystemVerilog.}
+        This work delivers the first publicly documented single-lane Zve32x
+        implementation that explicitly targets ASIC tapeout rules, including
+        parameterised widths, synchronous active-low reset, no latches, and no
+        simulation-only constructs in any production RTL file.
+
+  \item \textbf{A 48-bit structured control bus architecture.}
+        The \texttt{vproc\_vdecoder} module produces a 48-bit control word that
+        encodes all execution context --- register addresses, operation flags,
+        masking controls, reduction flags, and vtype --- into a single bus that passes
+        through the instruction \gls{fifo} and drives all downstream units without
+        any re-decoding. This single-decode, single-pipeline-register design minimises
+        routing complexity and ensures synthesis tools can easily register the control
+        path.
+
+  \item \textbf{A serial reduction unit with busy-based protocol.}
+        Unlike published designs that employ a combinational reduction tree (which
+        produces a $O(\log_2 N)$-deep critical path), the \texttt{vproc\_reduction}
+        module accumulates one element per clock cycle using a single adder under
+        FSM control. The \texttt{reduction\_busy} signal allows the FSM to overlap
+        the next instruction's decode with the final accumulation cycle, improving
+        utilisation without increasing logic depth.
+
+  \item \textbf{A dual-port DMEM arbitration scheme for scalar--vector coexistence.}
+        The \texttt{dmem\_sync} module exposes independent scalar and VLSU ports that
+        map to the two read/write ports of a single block-RAM primitive, eliminating
+        structural hazards between scalar load/store and vector load/store without
+        an explicit arbiter.
+
+  \item \textbf{A UART TL-UL slave interface for end-to-end image streaming.}
+        A synthesisable UART peripheral following the TileLink Uncached Lightweight
+        (\gls{tlu}) protocol is integrated at the top-level address space.
+        Firmware running on the RISC-V core can stream raw image data bytes via
+        MMIO writes and reads, enabling end-to-end validation that no simulation-level
+        abstraction could provide.
+
+  \item \textbf{Validated FPGA prototype on DE10-Standard achieving 47.18~MHz.}
+        The complete design was synthesised and placed-and-routed using Intel Quartus
+        Prime on a Cyclone~V device, consuming 10\,438 \glspl{alm} and achieving an
+        \gls{fmax} of 47.18~MHz --- a $3\times$ frequency improvement over an earlier
+        iteration that used a combinational reduction chain, demonstrating the benefit
+        of the serial reduction redesign.
+\end{enumerate}
+
+\section{Thesis Organisation}
+\label{sec:organisation}
+
+The remainder of this thesis is organised as follows.
+
+\textbf{Chapter~\ref{ch:background}} provides the theoretical and contextual background
+required to understand the design decisions made in subsequent chapters. It surveys
+the RISC-V instruction set architecture, the principles of vector processing and how
+they differ from scalar SIMD, the RVV specification in detail, and the standard ASIC
+design methodology from \gls{rtl} through tapeout. The chapter concludes with a
+comparative survey of related academic and industrial vector processor implementations,
+positioning this work within the broader landscape.
+
+\textbf{Chapter~\ref{ch:specification}} defines the complete system specification that
+guided the implementation. It states the functional and non-functional requirements,
+provides a detailed instruction table covering all supported encodings, specifies the
+vector configuration model (VLEN, SEW, LMUL, VLMAX), describes the Harvard memory
+architecture with precise address maps, specifies the UART peripheral's register file
+and timing constraints, and states the performance targets against which the design
+is evaluated.
+
+\textbf{Chapter~\ref{ch:hardware}} describes the hardware architecture and
+\gls{rtl} implementation in detail. It covers the five-stage scalar pipeline with
+hazard detection and forwarding, the vector decoder and its 48-bit control bus, the
+instruction \gls{fifo}, the nine-state execution \gls{fsm}, the single-lane execution
+pipeline and each of its sub-units, the vector register file, the vector load/store unit,
+and the UART peripheral.
+
+\textbf{Chapter~\ref{ch:software}} describes the firmware and software infrastructure.
+It covers the assembly language programming model exposed to firmware writers, the
+build system and toolchain configuration, the BT.601 grayscale benchmark, the UART
+streaming protocol, and the \texttt{elf2hex} conversion pipeline that loads programs
+into the hardware.
+
+\textbf{Chapter~\ref{ch:evaluation}} presents verification and evaluation results.
+It describes the testbench methodology, the 172-case regression suite, per-instruction
+pass/fail analysis, the 128$\times$128 pixel grayscale benchmark, FPGA timing and
+area results, and a discussion of the frequency bottleneck and how the serial reduction
+redesign resolved it.
+
+\textbf{Chapter~\ref{ch:conclusion}} summarises the contributions, discusses limitations
+of the current implementation, and outlines directions for future work including
+multi-lane scaling, floating-point support, and formal verification.

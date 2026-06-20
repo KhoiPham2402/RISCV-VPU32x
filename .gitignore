@@ -10,5 +10,35 @@ bench/work/
 wave_*.vcd
 sim_*.txt
 results/
+
+# ModelSim session files
+*.wlf
+wlf*
+modelsim.ini
+bench/modelsim.ini
+
+# FPGA bitstream outputs (large binary)
+sof/
+*.sof
+*.jic
+*.pof
+
+# Claude Code internal state (machine-specific)
+.claude/
+
+# Quartus/Synopsys generated files
+db/
+incremental_db/
+output_files/
+*.qws
+*.rpt
+*.summary
+*.smsg
+
+# Large simulation data files
 sw/benchmarks/lena_gray/lena_dmem_out.hex
 sw/benchmarks/lena_gray/lena_dmem_init.hex
+
+# Temp/scratch
+*.bak
+imem_backup*.hex

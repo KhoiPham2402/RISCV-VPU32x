@@ -1,0 +1,78 @@
+# Quartus Settings File — Pipelined VPU Trial
+# Device: Intel Cyclone V  5CSXFC6D6F31C6  (DE10-Standard board)
+# Top:    riscv_vpu_top_pipeline
+
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CSXFC6D6F31C6
+set_global_assignment -name TOP_LEVEL_ENTITY riscv_vpu_top_pipeline
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
+set_global_assignment -name OPTIMIZATION_MODE "BALANCED"
+set_global_assignment -name ALLOW_REGISTER_RETIMING ON
+# ── Pipelined VPU files (in this folder) ──────────────────────────────────────
+set_global_assignment -name SYSTEMVERILOG_FILE vproc_fsm_p.sv
+set_global_assignment -name SYSTEMVERILOG_FILE vproc_system_wrapper_p.sv
+set_global_assignment -name SYSTEMVERILOG_FILE riscv_vpu_top_pipeline.sv
+
+# ── Original VPU RTL (unchanged, referenced from ../rtl/) ─────────────────────
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_adder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_mul.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_logic.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_shifter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_compare.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_compare_combine.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_minmax.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_reduction.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_merge_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_processor_lane.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_vregfile.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_mux_cells.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_mask_enable.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_mask_write_buffer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_vcsr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_cfg_encoder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_cycle_counter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_vrf_addr_gen.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_scalar_expand.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_fifo.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_vdecoder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/vproc_vec_lsu.sv
+
+# ── Scalar RISC-V core ────────────────────────────────────────────────────────
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/single_cycle.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/control_unit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/alu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/lsu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/imem.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/Regfile.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/register_file.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/immgen.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/brc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/brc_comparator.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/barrel_shifter_32bit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/barrel_shifter_32bit_left.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/adder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/d_ff.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/register.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mux2to1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mux4to1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mux8to1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mux32to1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mux2X1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/decoder5to32.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/eight_bit_adder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/full_adder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mag_comparator.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/mag_comparator8.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/controlunit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/word_and.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/word_or.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/riscv/word_xor.sv
+
+# ── Clock constraint ──────────────────────────────────────────────────────────
+# DE10-Standard board clock: 50 MHz on PIN_AF14
+# Constrain at 100 MHz to stress-test pipeline and observe Fmax slack.
+set_location_assignment PIN_AF14 -to clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk
+
+create_clock -name clk -period 10.000 [get_ports {clk}]

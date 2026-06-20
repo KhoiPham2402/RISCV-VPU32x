@@ -2,16 +2,23 @@ transcript on
 
 # run_lena_sim.do — Lena RGB→Grayscale VPU benchmark simulation
 #
-# Prerequisites (run once before this script):
-#   cd sw/benchmarks/lena_gray
-#   make          # assembles lena_gray.S → rtl/imem_from_gcc.hex
-#                 # also runs prep_lena.py → lena_dmem_init.hex + reference images
-#
-# Run:
-#   vsim -c -do run_lena_sim.do
+# Run from project root:
+#   vsim -do run_lena_sim.do
 #
 # After simulation:
 #   python sw/benchmarks/lena_gray/reconstruct.py
+
+# ── Copy lena_gray firmware into IMEM ────────────────────────────────────────
+set LENA_HEX [file normalize "sw/benchmarks/lena_gray/lena_imem.hex"]
+set IMEM_HEX [file normalize "rtl/imem_from_gcc.hex"]
+
+if {![file exists $LENA_HEX]} {
+    puts "ERROR: $LENA_HEX not found."
+    puts "  Build it: cd sw/benchmarks/lena_gray && make"
+    quit -f
+}
+file copy -force $LENA_HEX $IMEM_HEX
+puts "INFO: Copied lena_imem.hex → rtl/imem_from_gcc.hex"
 
 if {![file exists work]} {
     vlib work
@@ -81,6 +88,6 @@ vlog -sv \
     bench/tb_lena_gray.sv
 
 # ===== Run =====
+# Note: no "quit -f" so the transcript stays visible for screenshot capture.
 vsim -voptargs=+acc work.tb_lena_gray
 run -all
-quit -f
