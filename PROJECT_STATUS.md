@@ -6,14 +6,30 @@
 
 ## Current Phase
 
-**Phase:** FPGA Board Demo — VGA display working; RGB→grayscale pipeline debugged & fixed; awaiting full recompile for hardware validation
+**Phase:** Benchmark & Documentation — All simulation milestones PASS; benchmarks measured; repo on GitHub; next: ASIC synthesis flow
 **Target:** ASIC Tapeout (primary) / DE10-Standard demo board (FPGA validation)
 
-**Last session (2026-05-31):**
+**Last session (2026-06-04):**
+- GitHub repo created: https://github.com/KhoiPham2402/RISCV-VPU32x
+- Synced `vproc_system_wrapper.sv` VLSU CSR stall fix from `fpga/rtl/` → `rtl/`
+- Scalar vs VPU benchmark report completed (`BENCHMARK_REPORT.md`)
+- 7 benchmark comparison charts generated (`report/charts/`)
+- Scalar AXPY simulation: 315 cycles (confirmed ModelSim, 2026-06-03)
+- README.md created with full project documentation
+
+**Previous session (2026-05-31):**
 - VGA output confirmed working on DE10-Standard with pre-loaded Lena Y channel
-- Found & fixed VPU VLSU CSR stall bug (see Issue #17 + Change Log)
+- Found & fixed VPU VLSU CSR stall bug (Issue #17) in `fpga/rtl/vpu/vproc_system_wrapper.sv`
 - Simulation: RGB→grayscale PASS 4096/4096 words after fix
-- Next step: Full Quartus recompile → program .sof → hardware verify RGB→grayscale
+- 5-stage pipelined scalar core + UART TL-UL integration complete (riscv_vpu_top_v4)
+
+**Benchmark Summary:**
+
+| Benchmark | Scalar | VPU | Speedup | Status |
+|-----------|-------:|----:|:-------:|--------|
+| AXPY N=16 (SEW=32) | 315 cy | 221 cy | **1.43×** | ✅ Simulation confirmed |
+| MatMul 4×4 int32 | ~858 cy | 317 cy | **~2.7×** | ✅ VPU sim confirmed |
+| Lena BT.601 128×128 | ~295K cy | 34 828 cy | **8.5×** | ✅ 16384/16384 px correct |
 
 ---
 
@@ -48,7 +64,10 @@
 | Quartus DMEM bank IP (dmem_bank) | ✅ Done | `dmem_bank.qip` — TDP 8-bit M10K × 4 lanes, 16384 deep |
 | DMEM MIF init (RGB pre-load) | ✅ Done | `fpga/rtl/mem/dmem_bank_b0-b3.v` wrappers + `gen_dmem_mif.py`; bypasses UART |
 | FPGA compile + program DE10-Standard | ✅ Done | Quartus 18.1 — first `.sof` running, VGA display confirmed |
-| RGB→grayscale FPGA demo (VPU) | 🔄 In progress | Sim PASS 4096/4096; needs full recompile after VLSU CSR stall bugfix |
+| RGB→grayscale FPGA demo (VPU) | 🔄 In progress | Sim PASS 4096/4096; needs full Quartus recompile + hardware verify |
+| Scalar vs VPU benchmark report | ✅ Done | `BENCHMARK_REPORT.md` + `report/charts/` — 3 benchmarks, 7 charts |
+| GitHub repo | ✅ Done | https://github.com/KhoiPham2402/RISCV-VPU32x — 2 branches |
+| RTL sync (fpga → rtl) | ✅ Done | `vproc_system_wrapper.sv` VLSU CSR fix synced to `rtl/` (2026-06-04) |
 | Synthesis (Yosys / DC) | ⬜ Not started | — |
 | Static timing analysis | ⬜ Not started | — |
 | Clock gating insertion | ⬜ Not started | — |
@@ -277,3 +296,9 @@ rtl_trial/
 | 2026-05-31 | Hardware verified: VGA display working — Lena Y channel pre-loaded via MIF, image displayed on VGA monitor | FPGA hardware |
 | 2026-05-31 | **Fix (Critical): vproc_system_wrapper.sv — VLSU CSR stall bug.** vle8.v could fire during vsetvli's ST_CONFIG, seeing csr_vl_o=0, loading only 1 DMEM word → lanes 1-3 = 0 → R contribution lost for elements 4-15 of first VPU iteration. Fix: added `is_load_csr_stall = instr_valid && is_vls_load_raw && vsetvli_pending` to both `vls_fire` and `vpu_ready`. | fpga/rtl/vpu/vproc_system_wrapper.sv |
 | 2026-05-31 | Add: fpga/ip/dmem_bank_b0-b3.sv — behavioral simulation passthrough wrappers for dmem_bank_b0-b3.v | fpga/ip/dmem_bank_b0-b3.sv |
+| 2026-06-03 | Benchmark: scalar AXPY N=16 = 315 cycles (ModelSim, single-cycle core, tb_scalar_io_detect.sv) | bench/tb_scalar_io_detect.sv |
+| 2026-06-03 | Add: 7 benchmark comparison charts (Scalar vs VPU) via matplotlib | report/charts/, report/gen_benchmark_charts.py |
+| 2026-06-03 | Add: BENCHMARK_REPORT.md — full scalar vs VPU analysis with simulation evidence | BENCHMARK_REPORT.md |
+| 2026-06-04 | Sync: vproc_system_wrapper.sv VLSU CSR stall fix from fpga/rtl/vpu/ → rtl/ | rtl/vproc_system_wrapper.sv |
+| 2026-06-04 | Add: README.md — full project documentation (architecture, build, sim, FPGA, benchmarks) | README.md |
+| 2026-06-04 | Push: project to GitHub — https://github.com/KhoiPham2402/RISCV-VPU32x (master + trial/pipeline-sync-mem-uart) | git remote |

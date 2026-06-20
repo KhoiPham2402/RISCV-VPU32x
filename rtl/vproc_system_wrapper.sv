@@ -215,13 +215,20 @@ module vproc_system_wrapper #(
                           && (busy || fifo_data_valid)
                           && (pending_vd_addr == instruction[11:7]);
 
+    // CSR stall: a load sees stale csr_vl_o=0 if vsetvli is still in FSM or FIFO.
+    // Declared here (before vls_fire) because both vls_fire and vpu_ready use it.
+    wire vsetvli_pending   = fsm_csr_cfg_en || (fifo_data_valid && fifo_ctrl_out[28]);
+    wire is_load_csr_stall = instr_valid && is_vls_load_raw && vsetvli_pending;
+
     // Dispatcher: fire VLSU when:
     //   - instruction valid, recognised VLS, VLSU free
     //   - STORE: OP-V pipeline fully drained (WAR: vs2 port no longer hijacked)
     //   - LOAD:  OP-V FSM not writing same vd (WAW: VRF write-port conflict)
+    //   - LOAD:  vsetvli not pending (CSR stall guard — see is_load_csr_stall)
     wire vls_fire = instr_valid && is_vls_insn && !vlsu_busy_int
                     && (!is_vls_store_raw || !fifo_or_fsm_busy)
-                    && !load_waw_stall;
+                    && !load_waw_stall
+                    && !is_load_csr_stall;
 
     // Track whether the running VLSU op is a load (for VRF vs2 mux)
     reg vlsu_is_load_r;
@@ -337,11 +344,16 @@ module vproc_system_wrapper #(
     //   - VLSU busy (ongoing load or store)
     //   - STORE presented while OP-V pipeline draining (WAR guard)
     //   - LOAD presented while OP-V FSM writing same vd (WAW guard)
+    //   - LOAD presented while vsetvli is pending (CSR stall guard):
+    //     A vle*/vse* fires with csr_vl_o; if vsetvli is still in FSM (ST_CONFIG)
+    //     or in the FIFO head, csr_vl_o may be stale (0 from reset). Stall the
+    //     scalar so the load does not fire until VL is committed.
     wire is_store_stall = instr_valid && is_vls_store_raw
                           && is_vls_unit_stride && is_vls_regular
                           && fifo_or_fsm_busy;
     assign vpu_ready     = ~fifo_full && ~vlsu_busy_int
-                           && ~is_store_stall && ~load_waw_stall;
+                           && ~is_store_stall && ~load_waw_stall
+                           && ~is_load_csr_stall;
     assign vlsu_busy_o   = vlsu_busy_int;
     assign vpu_cfg_done  = fsm_csr_cfg_en;
     // Write actual vl (= min(avl, vlmax)) to scalar rd, NOT avl_remain.
@@ -547,7 +559,7 @@ module vproc_system_wrapper #(
     assign lane3_v0_merge_bits = vm_r ? 32'hFFFF_FFFF : lane3_v0_merge_bits_r;
 
     // ===== Reduction op decode + reduction unit =====
-    // RVV 1.0 §14.1: funct6[2:0] encodes the operation (funct3=010, funct6[5:3]=000)
+    // RVV 1.0 §14.1: all vred* share funct6[5:3]=000, distinguished by funct6[2:0].
     always @(*) begin
         case (funct6_r[2:0])
             3'b000: reduction_operation = RED_SUM;    // vredsum.vs
