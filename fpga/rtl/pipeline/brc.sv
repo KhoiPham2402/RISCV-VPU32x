@@ -14,7 +14,7 @@ module brc (
 	logic o_br_equal;
 	logic sel;
 	
-	assign sel = (i_rs1_data[31] ^ i_rs2_data[31]) & i_br_un;
+	assign sel = (i_rs1_data[31] ^ i_rs2_data[31]) & ~i_br_un;
 	assign o_br_less = br_less;
 	mag_comparator comp32 (	.in1 (i_rs1_data),
 				.in2 	(i_rs2_data),

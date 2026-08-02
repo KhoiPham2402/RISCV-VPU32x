@@ -81,6 +81,7 @@ foreach f {
 }
 
 # 6. DMEM wrapper (uses dmem_bank_b0..b3 behavioral models)
+vlog -sv -work work [file join $FPGA rtl bus dmem_arbiter.sv]
 vlog -sv -work work [file join $FPGA rtl mem dmem_qip_wrapper.sv]
 
 # 7. VGA

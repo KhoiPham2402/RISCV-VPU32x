@@ -1,0 +1,91 @@
+Reading C:/intelFPGA_lite/18.1/modelsim_ase/tcl/vsim/pref.tcl
+
+# 10.5b
+
+# do fpga/sim/run_dmem_arbiter.do
+# ** Warning: (vlib-34) Library already exists at "work".
+# Model Technology ModelSim - Intel FPGA Edition vmap 10.5b Lib Mapping Utility 2016.10 Oct  5 2016
+# vmap work work 
+# Modifying modelsim.ini
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:04:26 on Aug 02,2026
+# vlog -sv fpga/rtl/bus/dmem_arbiter.sv 
+# -- Compiling module dmem_arbiter
+# 
+# Top level modules:
+# 	dmem_arbiter
+# End time: 08:04:26 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:04:26 on Aug 02,2026
+# vlog -sv fpga/bench/dmem_model_sp.sv 
+# -- Compiling module dmem_model_sp
+# 
+# Top level modules:
+# 	dmem_model_sp
+# End time: 08:04:26 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:04:26 on Aug 02,2026
+# vlog -sv fpga/bench/tb_dmem_arbiter.sv 
+# -- Compiling module tb_dmem_arbiter
+# 
+# Top level modules:
+# 	tb_dmem_arbiter
+# End time: 08:04:26 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c work.tb_dmem_arbiter 
+# Start time: 08:04:26 on Aug 02,2026
+# Loading sv_std.std
+# Loading work.tb_dmem_arbiter
+# Loading work.dmem_arbiter
+# Loading work.dmem_model_sp
+# [PASS] C1: scalar-alone read not stalled
+# [PASS] C1: scalar-alone read data correct 1 cycle later
+# [PASS] C2: VLSU read not ready before the grant edge
+# [PASS] C2: VLSU read ready right after the grant edge
+# [PASS] C2: VLSU-alone read data correct
+# [PASS] C3: scalar stalled when VLSU contends
+# [PASS] C3: VLSU's contended read completed on the grant edge
+# [PASS] C3: scalar granted on retry once VLSU idle
+# [PASS] C3: scalar's retried read data correct
+# [PASS] C4: scalar write stalled when VLSU write contends
+# [PASS] C4: VLSU write landed
+# [PASS] C4: scalar write did NOT land while denied
+# [PASS] C4: scalar write granted on retry
+# [PASS] C4: scalar write landed on retry
+# [PASS] C5: video held at reset value while scalar wins
+# [PASS] C5: video data updates once granted
+# [PASS] C6: scalar stalled with VLSU+video contending
+# [PASS] C6: video holds last value (unchanged) while denied
+# [PASS] C7: byte-enable partial write only touches byte 0
+# [PASS] C8: scalar denied on burst cycle 0
+# [PASS] C8: VLSU word200 correct mid-burst (no dropped/corrupted cycle)
+# [PASS] C8: scalar write still blocked after burst cycle 0
+# [PASS] C8: scalar denied on burst cycle 1
+# [PASS] C8: VLSU word201 correct mid-burst (no dropped/corrupted cycle)
+# [PASS] C8: scalar write still blocked after burst cycle 1
+# [PASS] C8: scalar denied on burst cycle 2
+# [PASS] C8: VLSU word202 correct mid-burst (no dropped/corrupted cycle)
+# [PASS] C8: scalar write still blocked after burst cycle 2
+# [PASS] C8: scalar denied on burst cycle 3
+# [PASS] C8: VLSU word203 correct mid-burst (no dropped/corrupted cycle)
+# [PASS] C8: scalar write still blocked after burst cycle 3
+# [PASS] C8: scalar denied on burst cycle 4
+# [PASS] C8: VLSU word204 correct mid-burst (no dropped/corrupted cycle)
+# [PASS] C8: scalar write still blocked after burst cycle 4
+# [PASS] C8: scalar finally granted once burst ends
+# [PASS] C8: scalar write lands correctly after 5-cycle burst, data/address unchanged throughout
+# [PASS] C9: video holds stable value through denial cycle 0 (not corrupted)
+# [PASS] C9: video holds stable value through denial cycle 1 (not corrupted)
+# [PASS] C9: video holds stable value through denial cycle 2 (not corrupted)
+# [PASS] C9: video holds stable value through denial cycle 3 (not corrupted)
+# [PASS] C9: video holds stable value through denial cycle 4 (not corrupted)
+# [PASS] C9: video refreshes correctly after a 5-cycle sustained denial
+# === RESULT: ALL PASS ===
+# ** Note: $stop    : fpga/bench/tb_dmem_arbiter.sv(244)
+#    Time: 345 ns  Iteration: 1  Instance: /tb_dmem_arbiter
+# Break in Module tb_dmem_arbiter at fpga/bench/tb_dmem_arbiter.sv line 244
+# Stopped at fpga/bench/tb_dmem_arbiter.sv line 244
+# End time: 08:04:27 on Aug 02,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0

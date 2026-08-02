@@ -1,0 +1,334 @@
+Reading C:/intelFPGA_lite/18.1/modelsim_ase/tcl/vsim/pref.tcl
+
+# 10.5b
+
+# do fpga/sim/run_fpga_all_instr.do
+# vlib work
+# ** Warning: (vlib-34) Library already exists at "work".
+# vmap work work
+# Model Technology ModelSim - Intel FPGA Edition vmap 10.5b Lib Mapping Utility 2016.10 Oct  5 2016
+# vmap work work 
+# Modifying modelsim.ini
+# 
+# vlog -sv \
+#     fpga/rtl/vpu/vproc_adder.sv \
+#     fpga/rtl/vpu/vproc_mul.sv \
+#     fpga/rtl/vpu/vproc_logic.sv \
+#     fpga/rtl/vpu/vproc_shifter.sv \
+#     fpga/rtl/vpu/vproc_compare.sv \
+#     fpga/rtl/vpu/vproc_compare_combine.sv \
+#     fpga/rtl/vpu/vproc_minmax.sv \
+#     fpga/rtl/vpu/vproc_reduction.sv \
+#     fpga/rtl/vpu/vproc_merge_unit.sv \
+#     fpga/rtl/vpu/vproc_processor_lane.sv \
+#     fpga/rtl/vpu/vproc_vregfile.sv \
+#     fpga/rtl/vpu/vproc_mux_cells.sv \
+#     fpga/rtl/vpu/vproc_mask_enable.sv \
+#     fpga/rtl/vpu/vproc_mask_write_buffer.sv \
+#     fpga/rtl/vpu/vproc_vcsr.sv \
+#     fpga/rtl/vpu/vproc_cfg_encoder.sv \
+#     fpga/rtl/vpu/vproc_cycle_counter.sv \
+#     fpga/rtl/vpu/vproc_vrf_addr_gen.sv \
+#     fpga/rtl/vpu/vproc_scalar_expand.sv \
+#     fpga/rtl/vpu/vproc_fsm.sv \
+#     fpga/rtl/vpu/vproc_fifo.sv \
+#     fpga/rtl/vpu/vproc_vdecoder.sv \
+#     fpga/rtl/vpu/vproc_vec_lsu.sv \
+#     fpga/rtl/vpu/vproc_system_wrapper.sv \
+#     bench/tb_vproc_all_instr.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:51 on Aug 02,2026
+# vlog -sv fpga/rtl/vpu/vproc_adder.sv fpga/rtl/vpu/vproc_mul.sv fpga/rtl/vpu/vproc_logic.sv fpga/rtl/vpu/vproc_shifter.sv fpga/rtl/vpu/vproc_compare.sv fpga/rtl/vpu/vproc_compare_combine.sv fpga/rtl/vpu/vproc_minmax.sv fpga/rtl/vpu/vproc_reduction.sv fpga/rtl/vpu/vproc_merge_unit.sv fpga/rtl/vpu/vproc_processor_lane.sv fpga/rtl/vpu/vproc_vregfile.sv fpga/rtl/vpu/vproc_mux_cells.sv fpga/rtl/vpu/vproc_mask_enable.sv fpga/rtl/vpu/vproc_mask_write_buffer.sv fpga/rtl/vpu/vproc_vcsr.sv fpga/rtl/vpu/vproc_cfg_encoder.sv fpga/rtl/vpu/vproc_cycle_counter.sv fpga/rtl/vpu/vproc_vrf_addr_gen.sv fpga/rtl/vpu/vproc_scalar_expand.sv fpga/rtl/vpu/vproc_fsm.sv fpga/rtl/vpu/vproc_fifo.sv fpga/rtl/vpu/vproc_vdecoder.sv fpga/rtl/vpu/vproc_vec_lsu.sv fpga/rtl/vpu/vproc_system_wrapper.sv bench/tb_vproc_all_instr.sv 
+# -- Compiling module vproc_adder
+# -- Compiling module vproc_mul
+# -- Compiling module vproc_logic
+# -- Compiling module vproc_shifter
+# -- Compiling module vproc_compare
+# -- Compiling module vproc_compare_combine
+# -- Compiling module vproc_minmax
+# -- Compiling module vproc_reduction
+# -- Compiling module vproc_merge_unit
+# -- Compiling module vproc_processor_lane
+# -- Compiling module vproc_vregfile
+# -- Compiling module vproc_mux2to1
+# -- Compiling module vproc_mux8to1
+# -- Compiling module vproc_mux4to1_w4
+# -- Compiling module vproc_mask_enable
+# -- Compiling module vproc_mask_write_buffer
+# -- Compiling module vproc_vcsr
+# -- Compiling module vproc_cfg_encoder
+# -- Compiling module vproc_cycle_counter
+# -- Compiling module vproc_vrf_addr_gen
+# -- Compiling module vproc_scalar_expand
+# -- Compiling module vproc_fsm
+# -- Compiling module vproc_fifo
+# -- Compiling module vproc_vdecoder
+# -- Compiling module vproc_vec_lsu
+# -- Compiling module vproc_system_wrapper
+# -- Compiling module tb_vproc_all_instr
+# 
+# Top level modules:
+# 	vproc_compare_combine
+# 	vproc_mux8to1
+# 	tb_vproc_all_instr
+# End time: 08:06:51 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 
+# vsim -voptargs=+acc -c work.tb_vproc_all_instr
+# vsim -voptargs="+acc" -c work.tb_vproc_all_instr 
+# Start time: 08:06:51 on Aug 02,2026
+# Loading sv_std.std
+# Loading work.tb_vproc_all_instr
+# Loading work.vproc_system_wrapper
+# Loading work.vproc_vdecoder
+# Loading work.vproc_fifo
+# Loading work.vproc_fsm
+# Loading work.vproc_scalar_expand
+# Loading work.vproc_cfg_encoder
+# Loading work.vproc_cycle_counter
+# Loading work.vproc_vrf_addr_gen
+# Loading work.vproc_vcsr
+# Loading work.vproc_mask_enable
+# Loading work.vproc_mux4to1_w4
+# Loading work.vproc_reduction
+# Loading work.vproc_mask_write_buffer
+# Loading work.vproc_vec_lsu
+# Loading work.vproc_vregfile
+# Loading work.vproc_processor_lane
+# Loading work.vproc_adder
+# Loading work.vproc_mul
+# Loading work.vproc_logic
+# Loading work.vproc_shifter
+# Loading work.vproc_merge_unit
+# Loading work.vproc_compare
+# Loading work.vproc_minmax
+# ** Warning: (vsim-3017) bench/tb_vproc_all_instr.sv(91): [TFMPC] - Too few port connections. Expected 32, found 31.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_vproc_all_instr/dut File: fpga/rtl/vpu/vproc_system_wrapper.sv
+# ** Warning: (vsim-3722) bench/tb_vproc_all_instr.sv(91): [TFMPC] - Missing connection for port 'vlsu_mem_ready'.
+# run -all
+# === tb_vproc_all_instr: VPU instruction regression ===
+# --- CONFIG ---
+# [PASS] CONFIG csr_vl
+# [PASS] CONFIG csr_vtype[7:0]
+# --- ALU VV ---
+# [PASS] VV f6=00 vd=v20 L0
+# [PASS] VV f6=00 vd=v20 L1
+# [PASS] VV f6=00 vd=v20 L2
+# [PASS] VV f6=00 vd=v20 L3
+# [PASS] VV f6=02 vd=v20 L0
+# [PASS] VV f6=02 vd=v20 L1
+# [PASS] VV f6=02 vd=v20 L2
+# [PASS] VV f6=02 vd=v20 L3
+# [PASS] VV f6=25 vd=v20 L0
+# [PASS] VV f6=25 vd=v20 L1
+# [PASS] VV f6=25 vd=v20 L2
+# [PASS] VV f6=25 vd=v20 L3
+# --- ALU VX/VI ---
+# [PASS] VX f6=00 vd=v20 rs1=00000005 L0
+# [PASS] VX f6=00 vd=v20 rs1=00000005 L1
+# [PASS] VX f6=00 vd=v20 rs1=00000005 L2
+# [PASS] VX f6=00 vd=v20 rs1=00000005 L3
+# [PASS] VX f6=02 vd=v20 rs1=00000032 L0
+# [PASS] VX f6=02 vd=v20 rs1=00000032 L1
+# [PASS] VX f6=02 vd=v20 rs1=00000032 L2
+# [PASS] VX f6=02 vd=v20 rs1=00000032 L3
+# [PASS] VI f6=00 vd=v20 imm=7 L0
+# [PASS] VI f6=00 vd=v20 imm=7 L1
+# [PASS] VI f6=00 vd=v20 imm=7 L2
+# [PASS] VI f6=00 vd=v20 imm=7 L3
+# --- VRSUB ---
+# [PASS] VX f6=03 vd=v20 rs1=0000000a L0
+# [PASS] VX f6=03 vd=v20 rs1=0000000a L1
+# [PASS] VX f6=03 vd=v20 rs1=0000000a L2
+# [PASS] VX f6=03 vd=v20 rs1=0000000a L3
+# [PASS] VI f6=03 vd=v20 imm=15 L0
+# [PASS] VI f6=03 vd=v20 imm=15 L1
+# [PASS] VI f6=03 vd=v20 imm=15 L2
+# [PASS] VI f6=03 vd=v20 imm=15 L3
+# --- Logic ---
+# [PASS] VV f6=09 vd=v20 L0
+# [PASS] VV f6=09 vd=v20 L1
+# [PASS] VV f6=09 vd=v20 L2
+# [PASS] VV f6=09 vd=v20 L3
+# [PASS] VV f6=0a vd=v20 L0
+# [PASS] VV f6=0a vd=v20 L1
+# [PASS] VV f6=0a vd=v20 L2
+# [PASS] VV f6=0a vd=v20 L3
+# [PASS] VV f6=0b vd=v20 L0
+# [PASS] VV f6=0b vd=v20 L1
+# [PASS] VV f6=0b vd=v20 L2
+# [PASS] VV f6=0b vd=v20 L3
+# --- Shifts ---
+# [PASS] VI f6=15 vd=v20 imm=2 L0
+# [PASS] VI f6=15 vd=v20 imm=2 L1
+# [PASS] VI f6=15 vd=v20 imm=2 L2
+# [PASS] VI f6=15 vd=v20 imm=2 L3
+# [PASS] VI f6=10 vd=v20 imm=2 L0
+# [PASS] VI f6=10 vd=v20 imm=2 L1
+# [PASS] VI f6=10 vd=v20 imm=2 L2
+# [PASS] VI f6=10 vd=v20 imm=2 L3
+# [PASS] VI f6=12 vd=v20 imm=2 L0
+# [PASS] VI f6=12 vd=v20 imm=2 L1
+# [PASS] VI f6=12 vd=v20 imm=2 L2
+# [PASS] VI f6=12 vd=v20 imm=2 L3
+# --- VMIN/VMAX (positive) ---
+# [PASS] VV f6=05 vd=v20 L0
+# [PASS] VV f6=05 vd=v20 L1
+# [PASS] VV f6=05 vd=v20 L2
+# [PASS] VV f6=05 vd=v20 L3
+# [PASS] VV f6=07 vd=v20 L0
+# [PASS] VV f6=07 vd=v20 L1
+# [PASS] VV f6=07 vd=v20 L2
+# [PASS] VV f6=07 vd=v20 L3
+# [PASS] VV f6=04 vd=v20 L0
+# [PASS] VV f6=04 vd=v20 L1
+# [PASS] VV f6=04 vd=v20 L2
+# [PASS] VV f6=04 vd=v20 L3
+# [PASS] VV f6=06 vd=v20 L0
+# [PASS] VV f6=06 vd=v20 L1
+# [PASS] VV f6=06 vd=v20 L2
+# [PASS] VV f6=06 vd=v20 L3
+# --- VMIN/VMAX (mixed sign) ---
+# [PASS] VV f6=05 vd=v20 L0
+# [PASS] VV f6=05 vd=v20 L1
+# [PASS] VV f6=05 vd=v20 L2
+# [PASS] VV f6=05 vd=v20 L3
+# [PASS] VV f6=07 vd=v20 L0
+# [PASS] VV f6=07 vd=v20 L1
+# [PASS] VV f6=07 vd=v20 L2
+# [PASS] VV f6=07 vd=v20 L3
+# [PASS] VV f6=04 vd=v20 L0
+# [PASS] VV f6=04 vd=v20 L1
+# [PASS] VV f6=04 vd=v20 L2
+# [PASS] VV f6=04 vd=v20 L3
+# [PASS] VV f6=06 vd=v20 L0
+# [PASS] VV f6=06 vd=v20 L1
+# [PASS] VV f6=06 vd=v20 L2
+# [PASS] VV f6=06 vd=v20 L3
+# --- Compare ---
+# [PASS] CMP VV f6=18 vd=v27 L0
+# [PASS] CMP VV f6=18 vd=v27 L1
+# [PASS] CMP VV f6=18 vd=v27 L2
+# [PASS] CMP VV f6=18 vd=v27 L3
+# [PASS] CMP VV f6=18 vd=v27 L0
+# [PASS] CMP VV f6=18 vd=v27 L1
+# [PASS] CMP VV f6=18 vd=v27 L2
+# [PASS] CMP VV f6=18 vd=v27 L3
+# [PASS] CMP VV f6=18 vd=v27 L0
+# [PASS] CMP VV f6=18 vd=v27 L1
+# [PASS] CMP VV f6=18 vd=v27 L2
+# [PASS] CMP VV f6=18 vd=v27 L3
+# [PASS] CMP VV f6=1b vd=v27 L0
+# [PASS] CMP VV f6=1b vd=v27 L1
+# [PASS] CMP VV f6=1b vd=v27 L2
+# [PASS] CMP VV f6=1b vd=v27 L3
+# [PASS] CMP VV f6=1b vd=v27 L0
+# [PASS] CMP VV f6=1b vd=v27 L1
+# [PASS] CMP VV f6=1b vd=v27 L2
+# [PASS] CMP VV f6=1b vd=v27 L3
+# [PASS] CMP VX f6=1a vd=v27 L0
+# [PASS] CMP VX f6=1a vd=v27 L1
+# [PASS] CMP VX f6=1a vd=v27 L2
+# [PASS] CMP VX f6=1a vd=v27 L3
+# --- VMULH family ---
+# [PASS] VV f6=27 vd=v20 L0
+# [PASS] VV f6=27 vd=v20 L1
+# [PASS] VV f6=27 vd=v20 L2
+# [PASS] VV f6=27 vd=v20 L3
+# [PASS] VV f6=24 vd=v20 L0
+# [PASS] VV f6=24 vd=v20 L1
+# [PASS] VV f6=24 vd=v20 L2
+# [PASS] VV f6=24 vd=v20 L3
+# [PASS] VV f6=26 vd=v20 L0
+# [PASS] VV f6=26 vd=v20 L1
+# [PASS] VV f6=26 vd=v20 L2
+# [PASS] VV f6=26 vd=v20 L3
+# --- Widening ---
+# [PASS] VWADD lo v18 L0
+# [PASS] VWADD lo v18 L1
+# [PASS] VWADD lo v18 L2
+# [PASS] VWADD lo v18 L3
+# [PASS] VWADD hi v19 L0
+# [PASS] VWADD hi v19 L1
+# [PASS] VWADD hi v19 L2
+# [PASS] VWADD hi v19 L3
+# [PASS] VSUBW lo v18 L0
+# [PASS] VSUBW lo v18 L1
+# [PASS] VSUBW lo v18 L2
+# [PASS] VSUBW lo v18 L3
+# [PASS] VADDWU lo v18 L0
+# [PASS] VADDWU lo v18 L1
+# [PASS] VADDWU lo v18 L2
+# [PASS] VADDWU lo v18 L3
+# [PASS] VMULW lo v18 L0
+# [PASS] VMULW lo v18 L1
+# [PASS] VMULW lo v18 L2
+# [PASS] VMULW lo v18 L3
+# [PASS] VMULWU lo v18 L0
+# [PASS] VMULWU lo v18 L1
+# [PASS] VMULWU lo v18 L2
+# [PASS] VMULWU lo v18 L3
+# [PASS] VSUBWU lo v18 L0
+# [PASS] VSUBWU lo v18 L1
+# [PASS] VSUBWU lo v18 L2
+# [PASS] VSUBWU lo v18 L3
+# [PASS] VMULWSU lo v18 L0
+# [PASS] VMULWSU lo v18 L1
+# [PASS] VMULWSU lo v18 L2
+# [PASS] VMULWSU lo v18 L3
+# --- LMUL=2 ---
+# [PASS] LMUL=2 csr_vl
+# [PASS] LMUL=2 VADD v21 L0
+# [PASS] LMUL=2 VADD v21 L1
+# [PASS] LMUL=2 VADD v21 L2
+# [PASS] LMUL=2 VADD v21 L3
+# [PASS] LMUL=2 VADD v22 L0
+# [PASS] LMUL=2 VADD v22 L1
+# [PASS] LMUL=2 VADD v22 L2
+# [PASS] LMUL=2 VADD v22 L3
+# --- Reductions ---
+# [PASS] RED f6=00 vd=v30 L0
+# [PASS] RED f6=07 vd=v30 L0
+# [PASS] RED f6=05 vd=v30 L0
+# [PASS] RED f6=06 vd=v30 L0
+# [PASS] RED f6=04 vd=v30 L0
+# --- OPMVV (funct3=010) ---
+# [PASS] MVV f6=25 vd=v20 L0
+# [PASS] MVV f6=25 vd=v20 L1
+# [PASS] MVV f6=25 vd=v20 L2
+# [PASS] MVV f6=25 vd=v20 L3
+# [PASS] MVV f6=27 vd=v20 L0
+# [PASS] MVV f6=27 vd=v20 L1
+# [PASS] MVV f6=27 vd=v20 L2
+# [PASS] MVV f6=27 vd=v20 L3
+# [PASS] MVV f6=24 vd=v20 L0
+# [PASS] MVV f6=24 vd=v20 L1
+# [PASS] MVV f6=24 vd=v20 L2
+# [PASS] MVV f6=24 vd=v20 L3
+# [PASS] MVV f6=26 vd=v20 L0
+# [PASS] MVV f6=26 vd=v20 L1
+# [PASS] MVV f6=26 vd=v20 L2
+# [PASS] MVV f6=26 vd=v20 L3
+# --- OPMVX (funct3=110) ---
+# [PASS] MVX f6=25 vd=v20 rs1=00000003 L0
+# [PASS] MVX f6=25 vd=v20 rs1=00000003 L1
+# [PASS] MVX f6=25 vd=v20 rs1=00000003 L2
+# [PASS] MVX f6=25 vd=v20 rs1=00000003 L3
+# [PASS] MVX f6=27 vd=v20 rs1=00000004 L0
+# [PASS] MVX f6=27 vd=v20 rs1=00000004 L1
+# [PASS] MVX f6=27 vd=v20 rs1=00000004 L2
+# [PASS] MVX f6=27 vd=v20 rs1=00000004 L3
+# [PASS] MVX f6=24 vd=v20 rs1=00000002 L0
+# [PASS] MVX f6=24 vd=v20 rs1=00000002 L1
+# [PASS] MVX f6=24 vd=v20 rs1=00000002 L2
+# [PASS] MVX f6=24 vd=v20 rs1=00000002 L3
+# [PASS] MVX f6=26 vd=v20 rs1=00000002 L0
+# [PASS] MVX f6=26 vd=v20 rs1=00000002 L1
+# [PASS] MVX f6=26 vd=v20 rs1=00000002 L2
+# [PASS] MVX f6=26 vd=v20 rs1=00000002 L3
+# === Summary: PASS=204  FAIL=0 ===
+# === RESULT: ALL PASS ===
+# ** Note: $finish    : bench/tb_vproc_all_instr.sv(625)
+#    Time: 2705 ns  Iteration: 0  Instance: /tb_vproc_all_instr
+# End time: 08:06:52 on Aug 02,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 2

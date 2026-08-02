@@ -3,7 +3,7 @@
 //  Added: 'is_load' output signal for Hazard Detection
 //==================================================================
 module control_unit (
-    input  logic [10:0] instr,  // 1 bit func7 + 3 bit func3 + 7 bit opcode
+    input  logic [16:0] instr,  // {funct7[6:0], funct3[2:0], opcode[6:0]}
 
     output logic       br_ctrl, // 1 = lệnh branch (B-type)
     output logic       j_taken, // 1 = jal or jalr
@@ -17,23 +17,33 @@ module control_unit (
     output logic       rd_wren,
     output logic       insn_vld,
     output logic       func7,   // instr[30]
-    
+
     // NEW SIGNAL FOR HAZARD UNIT
     output logic       is_load,  // 1 = Lệnh đọc từ Memory (Load) -> Check Stall
-    output logic       is_vector // Báo hiệu đây là lệnh gửi sang Vicuna
+    output logic       is_vector, // Báo hiệu đây là lệnh gửi sang Vicuna
+
+    // RV32M (mul/div/rem) is not implemented by this scalar core yet.
+    // Its funct7=0000001 encoding aliases onto base R-type ALU ops if left
+    // undetected (e.g. mul decodes as add) — this flag lets the caller
+    // squash the instruction instead of silently computing the wrong result.
+    output logic       illegal_instr
 );
 
     // Phân rã tín hiệu
-    logic [6:0] opcode;    
-    logic [2:0] funct3;    
-    logic       funct7_30; 
+    logic [6:0] opcode;
+    logic [2:0] funct3;
+    logic [6:0] funct7;
+    logic       funct7_30;
 
     assign opcode    = instr[6:0];
     assign funct3    = instr[9:7];
-    assign funct7_30 = instr[10];
+    assign funct7    = instr[16:10];
+    assign funct7_30 = funct7[5];
+
+    localparam logic [6:0] FUNCT7_MEXT = 7'b0000001; // RV32M mul/div/rem
 
     // Opcodes Definition
-    localparam logic [6:0] 
+    localparam logic [6:0]
         OPC_LUI    = 7'b0110111,
         OPC_AUIPC  = 7'b0010111,
         OPC_JAL    = 7'b1101111,
@@ -62,15 +72,16 @@ module control_unit (
         insn_vld  = 1'b0;
         is_vector = 1'b0;
         func7     = funct7_30;
-        is_load   = 1'b0; 
+        is_load   = 1'b0;
+        illegal_instr = 1'b0;
 
         case (opcode)
             OPC_REGREG: begin                // R-type
                 insn_vld = 1'b1;
                 rd_wren  = 1'b1;
-                opa_sel  = 1'b0;   
-                opb_sel  = 1'b0;    
-                wb_sel   = 2'b01;   
+                opa_sel  = 1'b0;
+                opb_sel  = 1'b0;
+                wb_sel   = 2'b01;
                 case (funct3)
                     3'b000: alu_op = {funct7_30, 3'b000}; // ADD/SUB
                     3'b001: alu_op = {funct7_30, 3'b001}; // SLL
@@ -81,6 +92,13 @@ module control_unit (
                     3'b110: alu_op = {funct7_30, 3'b110}; // OR
                     3'b111: alu_op = {funct7_30, 3'b111}; // AND
                 endcase
+
+                if (funct7 == FUNCT7_MEXT) begin
+                    // mul/div/rem: not implemented — squash instead of
+                    // silently aliasing onto the base ALU op above.
+                    rd_wren       = 1'b0;
+                    illegal_instr = 1'b1;
+                end
             end
 
             OPC_REGIMM: begin                // I-type ALU

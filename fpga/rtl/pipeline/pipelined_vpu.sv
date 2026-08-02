@@ -8,6 +8,18 @@
 //   - VPU custom dispatch interface
 //
 // Reset: synchronous, active-HIGH (i_reset)
+//
+// DMEM stall/retry (s_dmem_stall_i, from fpga/rtl/bus/dmem_arbiter.sv):
+// scalar DMEM access can be denied on any cycle the VPU/VLSU also wants the
+// shared port (VLSU has priority). On denial, ID/EX and EX/MEM freeze
+// (ex_hold) so the MEM-stage instruction re-drives the identical
+// address/be/wdata next cycle (sourced from already-latched alu_result_m/
+// rs2_data_m/func3_m — nothing new needs to be computed to retry). MEM/WB
+// takes a bubble instead of holding, since a denied access never reaches
+// memory: a store is simply never committed on the denied cycle (no double
+// write), and a load has no data to advance into WB yet. See vpu_insn_vld_o
+// below for how a vector instruction concurrently held in EX by this same
+// mechanism is prevented from double-dispatching to the VPU.
 //==========================================================================
 
 module pipelined_vpu (
@@ -29,6 +41,7 @@ module pipelined_vpu (
 
     output logic [31:0]  o_pc_debug,
     output logic         o_insn_vld,
+    output logic         o_illegal_instr, // 1 = unimplemented RV32M encoding squashed in ID
 
     // External scalar DMEM (connect to dmem_sync.sv scalar port)
     output logic [31:0]  s_dmem_addr_o,
@@ -37,6 +50,7 @@ module pipelined_vpu (
     output logic [ 3:0]  s_dmem_be_o,
     output logic         s_dmem_re_o,
     input  logic [31:0]  s_dmem_rdata_i,
+    input  logic         s_dmem_stall_i,   // 1 = DMEM port denied this cycle (arbiter, VLSU priority)
 
     // VPU custom interface (connect to vproc_system_wrapper)
     input  logic         vpu_ready_i,
@@ -86,12 +100,16 @@ module pipelined_vpu (
     logic        mem_wren, rd_wren;
     logic        insn_vld_d, func7_d;
     logic        is_load, is_vector;
+    logic        illegal_instr_d;
 
     //==================================================================
     // Hazard / Forwarding
     //==================================================================
     logic        stall_ld;
     logic        vpu_stall;
+    logic        mem_stall;        // scalar DMEM access denied by arbiter this cycle
+    logic        ex_hold;          // ID/EX + EX/MEM frozen (vpu_stall | mem_stall)
+    logic        vpu_disp_done_r;  // vector insn in EX already dispatched while held
     logic        stall;
     logic        flush;
     logic        hazard;
@@ -194,15 +212,24 @@ module pipelined_vpu (
     assign stall_ld = is_load_exe && (rd_addr_exe != 5'b0) &&
                       ((rd_addr_exe == rs1_addr) || (rd_addr_exe == rs2_addr));
 
-    // VPU stall: vector instruction in EX waiting for VPU to accept
-    assign vpu_stall = is_vector_exe && !vpu_ready_i;
-    assign stall     = stall_ld | vpu_stall;
+    // VPU stall: vector instruction in EX waiting for VPU to accept.
+    // vpu_disp_done_r guards against re-dispatching the same instruction if
+    // EX is held for an extra cycle by mem_stall after it already dispatched
+    // (see vpu_insn_vld_o below) — without it, vpu_ready staying 1 across a
+    // held cycle would look identical to "not yet dispatched" and vpu_stall
+    // would deassert, letting EX advance before mem_stall actually clears.
+    assign vpu_stall = is_vector_exe && !vpu_ready_i && !vpu_disp_done_r;
+    // Scalar DMEM access denied by the shared-bus arbiter this cycle (VLSU
+    // has priority) — the MEM-stage instruction must retry next cycle.
+    assign mem_stall = s_dmem_stall_i;
+    assign ex_hold   = vpu_stall | mem_stall;
+    assign stall     = stall_ld | ex_hold;
     assign hazard    = flush | stall_ld;  // bubble injection trigger
 
     // EX forwarding mux select
     always_comb begin
         if (rd_wren_mem && rd_addr_mem != 5'b0 && rd_addr_mem == rs1_addr_exe)
-            fwd_a = 2'b01;   // forward from MEM (alu_result_m)
+            fwd_a = 2'b01;   // forward from MEM (mem_fwd_value)
         else if (rf_wren && rf_waddr != 5'b0 && rf_waddr == rs1_addr_exe)
             fwd_a = 2'b10;   // forward from WB (rf_wdata)
         else
@@ -216,13 +243,43 @@ module pipelined_vpu (
             fwd_b = 2'b00;
     end
 
+    // Value to forward from MEM stage (bug fix 2026-08-02). The old code
+    // always forwarded alu_result_m, which is only the MEM-stage
+    // instruction's real result for regular ALU ops and AUIPC (wb_sel_mem
+    // == 01). For LUI (wb_sel_mem == 11) the real result is imm_m — LUI has
+    // no true rs1 field, so alu_result_m for it is garbage computed from
+    // whatever register instr[19:15] happens to alias. For JAL/JALR
+    // (wb_sel_mem == 10) the real result is pc_four_m (the return address);
+    // alu_result_m for them is the jump *target*, not the link value. Any
+    // instruction immediately following a lui/jal/jalr and consuming its rd
+    // (e.g. the addi half of a `li reg, <32-bit constant>` expansion) hit
+    // this exact 1-cycle-apart forwarding path and got silently wrong data.
+    // wb_sel_mem == 00 (LOAD) is not handled here: stall_ld guarantees a
+    // load's consumer never reaches EX while the load is still in MEM — by
+    // the time it does, the load is in WB and fwd_a/fwd_b already correctly
+    // select 10 (forward from WB, via rf_wdata / wb_sel_wb == 00).
+    logic [31:0] mem_fwd_value;
+    always_comb begin
+        case (wb_sel_mem)
+            2'b11:   mem_fwd_value = imm_m;        // LUI
+            2'b10:   mem_fwd_value = pc_four_m;    // JAL / JALR
+            default: mem_fwd_value = alu_result_m; // ALU / AUIPC (01); LOAD (00, unreachable)
+        endcase
+    end
+
     // WB->ID bypass at register file read
     assign rf1_fwd = rf_wren && (rf_waddr != 5'b0) && (rf_waddr == rs1_addr);
     assign rf2_fwd = rf_wren && (rf_waddr != 5'b0) && (rf_waddr == rs2_addr);
 
     // VPU outputs
     assign is_cfg_exe     = is_vector_exe && (inst_exe[14:12] == 3'b111); // vsetvl*
-    assign vpu_insn_vld_o = is_vector_exe;
+    // A vector instruction must dispatch exactly once. Normally EX advances
+    // the cycle after a successful dispatch, which guarantees this by
+    // construction; mem_stall can now hold EX for an extra cycle for reasons
+    // unrelated to VPU readiness, so "already dispatched" must be latched
+    // explicitly — otherwise vproc_system_wrapper's push_valid/vls_fire would
+    // fire a second time for the same instruction while EX is held.
+    assign vpu_insn_vld_o = is_vector_exe && !vpu_disp_done_r;
     assign vpu_insn_o     = inst_exe;
     assign vpu_rs1_data_o = rs1_data;
     assign vpu_rs2_data_o = rs2_data;
@@ -358,6 +415,7 @@ module pipelined_vpu (
     assign o_io_hex7 = hexh_r[30:24];
     assign o_io_lcd  = lcd_r;
     assign o_insn_vld = insn_vld_wb;
+    assign o_illegal_instr = illegal_instr_d;
 
     //==================================================================
     // INSTANTIATED MODULES
@@ -373,9 +431,9 @@ module pipelined_vpu (
         .instr(inst_decode)
     );
 
-    // Control unit — fixed slice: [6:0] for full 7-bit opcode
+    // Control unit — full funct7[6:0] (needed to detect RV32M funct7=0000001)
     control_unit u_control (
-        .instr    ({inst_decode[30], inst_decode[14:12], inst_decode[6:0]}),
+        .instr    ({inst_decode[31:25], inst_decode[14:12], inst_decode[6:0]}),
         .br_ctrl  (br_ctrl),
         .j_taken  (j_taken),
         .Immsel   (ImmSel),
@@ -389,7 +447,8 @@ module pipelined_vpu (
         .insn_vld (insn_vld_d),
         .func7    (func7_d),
         .is_load  (is_load),
-        .is_vector(is_vector)
+        .is_vector(is_vector),
+        .illegal_instr(illegal_instr_d)
     );
 
     immgen u_immgen (
@@ -430,7 +489,7 @@ module pipelined_vpu (
     // EX forwarding muxes (00=RF, 01=MEM, 10=WB)
     mux4to1 ex1_fwd (
         .in0(rs1_data_exe),
-        .in1(alu_result_m),
+        .in1(mem_fwd_value),
         .in2(rf_wdata),
         .in3(32'b0),
         .sel(fwd_a),
@@ -438,7 +497,7 @@ module pipelined_vpu (
     );
     mux4to1 ex2_fwd (
         .in0(rs2_data_exe),
-        .in1(alu_result_m),
+        .in1(mem_fwd_value),
         .in2(rf_wdata),
         .in3(32'b0),
         .sel(fwd_b),
@@ -500,7 +559,7 @@ module pipelined_vpu (
 
     //------------------------------------------------------------------
     // ID/EX Registers
-    //   enable = !vpu_stall
+    //   enable = !ex_hold (holds while retrying a denied DMEM access too)
     //   hazard (flush|stall_ld) → inject bubble
     //------------------------------------------------------------------
     always_ff @(posedge i_clk) begin
@@ -517,7 +576,7 @@ module pipelined_vpu (
             wb_sel_exe    <= 2'b0;  insn_vld_exe  <= 1'b0;
             func7_exe     <= 1'b0;  is_load_exe   <= 1'b0;
             is_vector_exe <= 1'b0;
-        end else if (!vpu_stall) begin
+        end else if (!ex_hold) begin
             if (hazard) begin
                 // Bubble: zero all control signals, keep PCs for debug
                 rs1_data_exe  <= 32'b0; rs2_data_exe  <= 32'b0;
@@ -547,11 +606,24 @@ module pipelined_vpu (
                 is_vector_exe <= is_vector;
             end
         end
-        // vpu_stall && !i_reset: hold all ID/EX values (implicit)
+        // ex_hold && !i_reset: hold all ID/EX values (implicit)
     end
 
     //------------------------------------------------------------------
-    // EX/MEM Registers — enable = !vpu_stall
+    // Vector dispatch one-shot — see vpu_insn_vld_o comment above.
+    // Set when a dispatch succeeds while EX is held; cleared once EX is
+    // free to advance again. Purely a function of registered state, so
+    // there is no combinational loop through the arbiter's mem_stall.
+    //------------------------------------------------------------------
+    always_ff @(posedge i_clk) begin
+        if (i_reset)                            vpu_disp_done_r <= 1'b0;
+        else if (!ex_hold)                      vpu_disp_done_r <= 1'b0;
+        else if (vpu_insn_vld_o && vpu_ready_i) vpu_disp_done_r <= 1'b1;
+    end
+
+    //------------------------------------------------------------------
+    // EX/MEM Registers — enable = !ex_hold (holds while retrying a denied
+    // DMEM access, not just while the VPU isn't ready)
     //------------------------------------------------------------------
     always_ff @(posedge i_clk) begin
         if (i_reset) begin
@@ -561,7 +633,7 @@ module pipelined_vpu (
             rd_addr_mem  <= 5'b0;  mem_wren_mem <= 1'b0;
             rd_wren_mem  <= 1'b0;  wb_sel_mem   <= 2'b0;
             insn_vld_mem <= 1'b0;  is_load_mem  <= 1'b0;
-        end else if (!vpu_stall) begin
+        end else if (!ex_hold) begin
             alu_result_m <= alu_result;    rs2_data_m   <= rs2_data;
             imm_m        <= imm_exe;       pc_four_m    <= pc_four_exe;
             pcm          <= pce;           func3_m      <= func3_exe;
@@ -572,7 +644,14 @@ module pipelined_vpu (
     end
 
     //------------------------------------------------------------------
-    // MEM/WB Registers — enable = !vpu_stall
+    // MEM/WB Registers — enable = !vpu_stall (unchanged). On mem_stall
+    // alone, inject a bubble instead of holding: the MEM-stage instruction
+    // stays in EX/MEM (frozen by ex_hold above) retrying its DMEM access,
+    // so nothing valid is available to advance into WB this cycle. Holding
+    // MEM/WB instead would re-present last cycle's already-completed
+    // instruction, which the WB stage would (harmlessly, since it's an
+    // idempotent same-value rewrite) commit again — bubbling is the
+    // correct/clean behavior, not just the safe one.
     // addr_lo captured here for WB load formatting (sync DMEM result
     // arrives one cycle after MEM issues the read, i.e., in WB cycle)
     //------------------------------------------------------------------
@@ -585,12 +664,21 @@ module pipelined_vpu (
             insn_vld_wb   <= 1'b0;  is_io_wb    <= 1'b0;
             io_rdata_wb   <= 32'b0;
         end else if (!vpu_stall) begin
-            alu_result_wb <= alu_result_m;      imm_wb       <= imm_m;
-            pc_four_wb    <= pc_four_m;         func3_wb     <= func3_m;
-            addr_lo_wb    <= alu_result_m[1:0]; rd_addr_wb   <= rd_addr_mem;
-            rd_wren_wb    <= rd_wren_mem;       wb_sel_wb    <= wb_sel_mem;
-            insn_vld_wb   <= insn_vld_mem;      is_io_wb     <= is_io_mem;
-            io_rdata_wb   <= io_rdata_mem;
+            if (mem_stall) begin
+                alu_result_wb <= 32'b0; imm_wb      <= 32'b0;
+                pc_four_wb    <= 32'b0; func3_wb    <= 3'b0;
+                addr_lo_wb    <= 2'b0;  rd_addr_wb  <= 5'b0;
+                rd_wren_wb    <= 1'b0;  wb_sel_wb   <= 2'b0;
+                insn_vld_wb   <= 1'b0;  is_io_wb    <= 1'b0;
+                io_rdata_wb   <= 32'b0;
+            end else begin
+                alu_result_wb <= alu_result_m;      imm_wb       <= imm_m;
+                pc_four_wb    <= pc_four_m;         func3_wb     <= func3_m;
+                addr_lo_wb    <= alu_result_m[1:0]; rd_addr_wb   <= rd_addr_mem;
+                rd_wren_wb    <= rd_wren_mem;       wb_sel_wb    <= wb_sel_mem;
+                insn_vld_wb   <= insn_vld_mem;      is_io_wb     <= is_io_mem;
+                io_rdata_wb   <= io_rdata_mem;
+            end
         end
     end
 
@@ -678,7 +766,7 @@ module pipelined_vpu (
         if (i_reset) begin
             vpu_cfg_pending_r <= 1'b0;
             vpu_cfg_rd_r      <= 5'b0;
-        end else if (is_cfg_exe && vpu_ready_i) begin
+        end else if (is_cfg_exe && vpu_ready_i && !vpu_disp_done_r) begin
             vpu_cfg_rd_r      <= rd_addr_exe;
             vpu_cfg_pending_r <= 1'b1;
         end else if (vpu_cfg_done_i) begin

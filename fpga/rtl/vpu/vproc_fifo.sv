@@ -53,7 +53,7 @@ module vproc_fifo #(
     wire wr_en       = push_valid && !is_full;
     wire pop_consume = pop_ready  && !empty;
 
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             count  <= {(ADDR_W+1){1'b0}};
             wr_ptr <= {ADDR_W{1'b0}};

@@ -17,7 +17,7 @@ module vproc_merge_unit (
     output reg [31:0] merge_out
 );
 
-    always @(*) begin
+    always_comb begin
         case (sew)
             3'd0: begin
                 merge_out[7:0]   = v0_lane_bits[0] ? vs1_data[7:0]   : vs2_data[7:0];

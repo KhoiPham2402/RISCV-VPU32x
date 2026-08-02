@@ -50,6 +50,7 @@ proc run_bench {hex_src label run_ns} {
                vproc_vec_lsu.sv vproc_system_wrapper.sv} {
         vlog -quiet -sv -work work [file join $FPGA rtl vpu $f]
     }
+    vlog -quiet -sv -work work [file join $FPGA rtl bus dmem_arbiter.sv]
     vlog -quiet -sv -work work [file join $FPGA rtl mem dmem_qip_wrapper.sv]
     vlog -quiet -sv -work work [file join $FPGA rtl hdmi vga_timing.sv]
     vlog -quiet -sv -work work [file join $FPGA rtl vga vga_ctrl.sv]

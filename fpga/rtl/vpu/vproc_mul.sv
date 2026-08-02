@@ -37,7 +37,7 @@ module vproc_mul (
     reg signed [15:0] a8_2_ext, b8_2_ext, prod8_2;
     reg signed [15:0] a8_3_ext, b8_3_ext, prod8_3;
 
-    always @(*) begin
+    always_comb begin
         // mặc định
         result_lo_r = 32'b0;
         result_hi_r = 32'b0;

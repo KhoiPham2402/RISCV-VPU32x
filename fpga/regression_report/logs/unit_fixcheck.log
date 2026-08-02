@@ -1,0 +1,101 @@
+Reading C:/intelFPGA_lite/18.1/modelsim_ase/tcl/vsim/pref.tcl
+
+# 10.5b
+
+# do fpga/sim/run_fixcheck.do
+# fpga/rtl
+# fpga/bench
+# ** Warning: (vlib-34) Library already exists at "work".
+# Model Technology ModelSim - Intel FPGA Edition vmap 10.5b Lib Mapping Utility 2016.10 Oct  5 2016
+# vmap work work 
+# Modifying modelsim.ini
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:53 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/mag_comparator.sv 
+# -- Compiling module mag_comparator
+# 
+# Top level modules:
+# 	mag_comparator
+# End time: 08:06:53 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:53 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/mag_comparator8.sv 
+# -- Compiling module mag_comparator8
+# 
+# Top level modules:
+# 	mag_comparator8
+# End time: 08:06:53 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:54 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/brc_comparator.sv 
+# -- Compiling module brc_comparator
+# 
+# Top level modules:
+# 	brc_comparator
+# End time: 08:06:54 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:54 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/mux2X1.sv 
+# -- Compiling module mux2X1
+# 
+# Top level modules:
+# 	mux2X1
+# End time: 08:06:54 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:54 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/brc.sv 
+# -- Compiling module brc
+# 
+# Top level modules:
+# 	brc
+# End time: 08:06:54 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:54 on Aug 02,2026
+# vlog -sv fpga/rtl/pipeline/control_unit.sv 
+# -- Compiling module control_unit
+# 
+# Top level modules:
+# 	control_unit
+# End time: 08:06:54 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 08:06:54 on Aug 02,2026
+# vlog -sv fpga/bench/tb_fixcheck.sv 
+# -- Compiling module tb_fixcheck
+# 
+# Top level modules:
+# 	tb_fixcheck
+# End time: 08:06:54 on Aug 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c work.tb_fixcheck 
+# Start time: 08:06:54 on Aug 02,2026
+# Loading sv_std.std
+# Loading work.tb_fixcheck
+# Loading work.brc
+# Loading work.mag_comparator
+# Loading work.mag_comparator8
+# Loading work.brc_comparator
+# Loading work.mux2X1
+# Loading work.control_unit
+# [PASS] BLT(-1,1): taken=1 (expected 1)
+# [PASS] BGE(-1,1): taken=0 (expected 0)
+# [PASS] BLTU(-1,1): taken=0 (expected 0)
+# [PASS] BGEU(-1,1): taken=1 (expected 1)
+# [PASS] BLT(1,2): taken=1 (expected 1)
+# [PASS] BLTU(1,2): taken=1 (expected 1)
+# [PASS] MUL squashed: illegal=1 rd_wren=0
+# [PASS] DIV squashed: illegal=1 rd_wren=0
+# [PASS] ADD not illegal: illegal=0 rd_wren=1
+# [PASS] SUB not illegal: illegal=0 rd_wren=1
+# ALL CHECKS PASSED
+# ** Note: $stop    : fpga/bench/tb_fixcheck.sv(96)
+#    Time: 10 ns  Iteration: 0  Instance: /tb_fixcheck
+# Break in Module tb_fixcheck at fpga/bench/tb_fixcheck.sv line 96
+# Stopped at fpga/bench/tb_fixcheck.sv line 96
+# End time: 08:06:55 on Aug 02,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0

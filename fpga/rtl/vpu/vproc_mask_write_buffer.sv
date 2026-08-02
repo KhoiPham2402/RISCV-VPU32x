@@ -45,7 +45,7 @@ module vproc_mask_write_buffer (
     reg [31:0] chunk_mask32;   // tránh shift 16-bit overflow khi tính (1<<e)-1
 
     // Trích dữ liệu cần ghi theo sew.
-    always @(*) begin
+    always_comb begin
         write_data     = 16'b0;
         case (sew)
             3'd0: begin
@@ -64,7 +64,7 @@ module vproc_mask_write_buffer (
     end
 
     // Giữ đúng elems_curr_cycle bit thấp trong chunk (1 bit / phần tử); chunk đầy = toàn 1 trong độ rộng chunk.
-    always @(*) begin
+    always_comb begin
         chunk_bit_mask = 16'h0000;
         case (sew)
             3'd0: begin // toi da 16 bit / lan ghi
@@ -99,7 +99,7 @@ module vproc_mask_write_buffer (
 
     wire [15:0] write_data_masked = write_data & chunk_bit_mask;
 
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             buffer_r  <= 128'b0;
             wr_ptr_r  <= 7'd0;

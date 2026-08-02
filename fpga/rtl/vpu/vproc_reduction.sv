@@ -88,7 +88,7 @@ module vproc_reduction (
         (op_r == RED_MIN ) ? ($signed(acc_r) < $signed(cur_s)      ? acc_r : cur_u) :
                               acc_r;
 
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             active     <= 1'b0;
             elem_cnt   <= 4'd0;

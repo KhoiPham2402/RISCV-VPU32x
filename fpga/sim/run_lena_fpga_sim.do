@@ -61,6 +61,7 @@ foreach f {
 }
 
 # ── DMEM wrapper ──────────────────────────────────────────────────────────────
+vlog -sv $RTL/bus/dmem_arbiter.sv
 vlog -sv $RTL/mem/dmem_qip_wrapper.sv
 
 # ── VGA controller ────────────────────────────────────────────────────────────

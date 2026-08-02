@@ -46,7 +46,11 @@ foreach f {
         [file join $RTL_ROOT rtl vpu $f]
 }
 
-# ── DMEM (M10K TDP wrapper) ───────────────────────────────────────────────────
+# ── DMEM bus arbiter (VLSU > scalar > video priority, single shared port) ─────
+set_global_assignment -name SYSTEMVERILOG_FILE \
+    [file join $RTL_ROOT rtl bus dmem_arbiter.sv]
+
+# ── DMEM (M10K single-port wrapper) ───────────────────────────────────────────
 set_global_assignment -name SYSTEMVERILOG_FILE \
     [file join $RTL_ROOT rtl mem dmem_qip_wrapper.sv]
 

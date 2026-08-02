@@ -66,7 +66,7 @@ module vproc_fsm (
     assign busy = (state_r != ST_IDLE);
 
     // Sequential: state + widen_sel registers
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_r <= ST_IDLE;
         end else begin

@@ -36,7 +36,7 @@ module vproc_vregfile #(
     integer i;
 
     // ghi đồng bộ theo clock, async reset về 0
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             for (i = 0; i < NUM_REGS; i = i + 1) begin
                 bank0[i] <= 8'b0;

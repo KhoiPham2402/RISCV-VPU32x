@@ -20,7 +20,7 @@ module vproc_logic (
     assign result_or  = result_or_r;
     assign result_xor = result_xor_r;
 
-    always @(*) begin
+    always_comb begin
         result_and_r = op_a & op_b;
         result_or_r  = op_a | op_b;
         result_xor_r = op_a ^ op_b;

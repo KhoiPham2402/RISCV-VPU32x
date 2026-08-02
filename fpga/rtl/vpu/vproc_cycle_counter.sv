@@ -33,7 +33,7 @@ module vproc_cycle_counter (
     reg  [3:0] cycles_total_latched_r;
     wire [7:0] vl_8b = (vl > 32'd255) ? 8'hFF : vl[7:0];
 
-    always @(*) begin
+    always_comb begin
         cycles_base_r = 4'd0;
 
         case (vlmul)
@@ -64,7 +64,7 @@ module vproc_cycle_counter (
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         case (vsew)
             3'b000: elems_per_cycle_r = 8'd16; // 128/8
             3'b001: elems_per_cycle_r = 8'd8;  // 128/16
@@ -73,12 +73,12 @@ module vproc_cycle_counter (
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         cycles_total_w = {1'b0, cycles_base_r};
     end
 
     // Runtime countdown registers
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             cycles_left_r <= 4'd0;
             elems_left_r  <= 8'd0;
@@ -112,7 +112,7 @@ module vproc_cycle_counter (
     // Combinational mask theo elems_curr_cycle + vsew
     // - Nếu full cycle: mask = FFFF
     // - Nếu partial: bật đúng số byte tương ứng với số element hiện tại
-    always @(*) begin
+    always_comb begin
         active_bytes_r = 6'd0;
 
         if (elems_curr_cycle >= elems_per_cycle_r) begin

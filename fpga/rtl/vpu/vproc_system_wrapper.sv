@@ -190,7 +190,7 @@ module vproc_system_wrapper #(
     // Convert instruction width field [14:12] to 2-bit SEW encoding
     //   000 → e8  (sew=0), 101 → e16 (sew=1), 110 → e32 (sew=2)
     reg [1:0] vls_sew_dec;
-    always @(*) begin
+    always_comb begin
         case (instruction[14:12])
             3'b000:  vls_sew_dec = 2'd0;
             3'b101:  vls_sew_dec = 2'd1;
@@ -232,7 +232,7 @@ module vproc_system_wrapper #(
 
     // Track whether the running VLSU op is a load (for VRF vs2 mux)
     reg vlsu_is_load_r;
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n)         vlsu_is_load_r <= 1'b1;
         else if (vls_fire)  vlsu_is_load_r <= is_vls_load_raw;
     end
@@ -245,7 +245,7 @@ module vproc_system_wrapper #(
     // vrf_busy_r[i]=1 means VRF[i] has an in-flight VLSU load writing to it.
     // FSM must not execute any OP-V instruction whose vs1/vs2 is marked busy.
     reg [31:0] vrf_busy_r;
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             vrf_busy_r <= 32'b0;
         end else begin
@@ -389,7 +389,7 @@ module vproc_system_wrapper #(
 
     // Chốt control + scalar(avl/rs1) + immediate vào thanh ghi tạm
     // chỉ khi FSM phát latch_ctrl_en.
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             ctrl_r       <= {CTRL_WIDTH{1'b0}};
             rs1_latched_r <= 32'd0;
@@ -515,7 +515,7 @@ module vproc_system_wrapper #(
     // sew=32b: mỗi lane nhận 1 bit trong từng block 4 bit.
     reg [31:0] lane0_v0_merge_bits_r, lane1_v0_merge_bits_r, lane2_v0_merge_bits_r, lane3_v0_merge_bits_r;
     integer i;
-    always @(*) begin
+    always_comb begin
         lane0_v0_merge_bits_r = 32'b0;
         lane1_v0_merge_bits_r = 32'b0;
         lane2_v0_merge_bits_r = 32'b0;
@@ -560,7 +560,7 @@ module vproc_system_wrapper #(
 
     // ===== Reduction op decode + reduction unit =====
     // RVV 1.0 §14.1: all vred* share funct6[5:3]=000, distinguished by funct6[2:0].
-    always @(*) begin
+    always_comb begin
         case (funct6_r[2:0])
             3'b000: reduction_operation = RED_SUM;    // vredsum.vs
             3'b001: reduction_operation = RED_AND;    // vredand.vs

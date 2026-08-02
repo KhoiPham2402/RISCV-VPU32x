@@ -23,7 +23,7 @@ module vproc_vrf_addr_gen #(
     reg [ADDR_WIDTH-1:0] s_offset_r;
     reg [ADDR_WIDTH-1:0] d_offset_r;
 
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             s_offset_r <= {ADDR_WIDTH{1'b0}};
         end else if (offset_clear) begin
@@ -33,7 +33,7 @@ module vproc_vrf_addr_gen #(
         end
     end
 
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             d_offset_r <= {ADDR_WIDTH{1'b0}};
         end else if (offset_clear) begin

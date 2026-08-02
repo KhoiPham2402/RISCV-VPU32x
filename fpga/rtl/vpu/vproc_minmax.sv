@@ -25,7 +25,7 @@ module vproc_minmax (
     reg        a32_lt_b32_s, a32_gt_b32_s;
     reg [31:0] out32;
 
-    always @(*) begin
+    always_comb begin
         result = 32'b0;
 
         case (sew)

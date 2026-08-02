@@ -257,7 +257,7 @@ module vproc_vec_lsu #(
     // =========================================================================
     // State Register
     // =========================================================================
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n)
             state_r <= ST_IDLE;
         else
@@ -292,7 +292,7 @@ module vproc_vec_lsu #(
     // =========================================================================
     // Sequential: Latch context + advance word counter + accumulate load buffer
     // =========================================================================
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             base_r        <= '0;
             sew_r         <= '0;

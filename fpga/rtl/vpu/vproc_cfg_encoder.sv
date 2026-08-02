@@ -31,7 +31,7 @@ module vproc_cfg_encoder #(
 
     // ── Step 1: số phần tử trên mỗi thanh ghi = VLEN / SEW ──
     reg [7:0] elem_per_reg;
-    always @(*) begin
+    always_comb begin
         case (vsew_f)
             3'd0: elem_per_reg = VLEN / 8;    // SEW = 8
             3'd1: elem_per_reg = VLEN / 16;   // SEW = 16
@@ -42,7 +42,7 @@ module vproc_cfg_encoder #(
 
     // ── Step 2: VLMAX = elem_per_reg × LMUL (dùng shift vì LMUL luôn là lũy thừa 2) ──
     reg [10:0] vlmax_r;
-    always @(*) begin
+    always_comb begin
         case (vlmul_f)
             3'b000: vlmax_r = {3'b0, elem_per_reg};          // ×1
             3'b001: vlmax_r = {2'b0, elem_per_reg, 1'b0};    // ×2
@@ -61,7 +61,7 @@ module vproc_cfg_encoder #(
     //   SEW = 16 → LMUL ≥ 1/2   (cấm 1/4, 1/8)
     //   SEW = 32 → LMUL ≥ 1     (cấm mọi fractional)
     reg vill_r;
-    always @(*) begin
+    always_comb begin
         vill_r = 1'b0;
 
         if (vsew_f > 3'd2) begin
@@ -89,7 +89,7 @@ module vproc_cfg_encoder #(
 
     // ── Step 4: sew cho lane modules (giữ đúng mã vsew RVV) ──
     reg [2:0] sew_r;
-    always @(*) begin
+    always_comb begin
         case (vsew_f)
             3'd0: sew_r = 3'd0;   // SEW = 8
             3'd1: sew_r = 3'd1;   // SEW = 16

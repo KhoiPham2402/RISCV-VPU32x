@@ -53,6 +53,7 @@ foreach f {
     vproc_vec_lsu.sv vproc_system_wrapper.sv
 } { vlog -sv -work work [file join $FPGA rtl vpu $f] }
 
+vlog -sv -work work [file join $FPGA rtl bus dmem_arbiter.sv]
 vlog -sv -work work [file join $FPGA rtl mem dmem_qip_wrapper.sv]
 vlog -sv -work work [file join $FPGA rtl hdmi vga_timing.sv]
 vlog -sv -work work [file join $FPGA rtl vga vga_ctrl.sv]

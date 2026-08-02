@@ -20,7 +20,7 @@ module vproc_shifter (
     reg [31:0] result_r;
     assign result = result_r;
 
-    always @(*) begin
+    always_comb begin
         result_r = 32'b0;
 
         case (sew)

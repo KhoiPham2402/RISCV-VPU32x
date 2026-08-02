@@ -38,6 +38,8 @@ output_files/
 # Large simulation data files
 sw/benchmarks/lena_gray/lena_dmem_out.hex
 sw/benchmarks/lena_gray/lena_dmem_init.hex
+sw/benchmarks/sobel/sobel_dmem_out.hex
+sw/benchmarks/sobel/sobel_dmem_init.hex
 
 # Temp/scratch
 *.bak

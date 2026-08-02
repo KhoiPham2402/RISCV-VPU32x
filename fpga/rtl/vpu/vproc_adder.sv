@@ -59,7 +59,7 @@ module vproc_adder (
             adder_third_1b = use_c ? ~cin_b : 1'b1;
     endfunction
 
-    always @(*) begin
+    always_comb begin
         // mặc định
         result_lo_r = 32'b0;
         result_hi_r = 32'b0;

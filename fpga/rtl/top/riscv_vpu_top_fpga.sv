@@ -7,9 +7,12 @@
 //   0xFF00_0000 – 0xFF00_00FF  UART  MMIO  (mapped via TL-UL inline)
 //
 // Bus architecture:
-//   Scalar core → address decode → DMEM Port A  (0x0000_xxxx)
-//                               └→ UART TL-UL   (0xFF00_00xx)
-//   VLSU        → DMEM Port B  (direct, no arbitration needed)
+//   Scalar core → address decode → UART TL-UL (0xFF00_00xx)
+//                               └→ dmem_arbiter M1 (0x0000_xxxx)
+//   VLSU        → dmem_arbiter M0 (highest priority)
+//   VGA         → dmem_arbiter M2 (lowest priority)
+//   dmem_arbiter → single shared DMEM port (dmem_qip_wrapper) — VLSU wins any
+//   contention, scalar stalls and retries (see pipelined_vpu.sv s_dmem_stall_i)
 // =============================================================================
 import tl_pkg::*;
 
@@ -65,17 +68,22 @@ module riscv_vpu_top_fpga #(
     // PLL — 50 MHz ref → outclk_0: 40 MHz sclk, outclk_1: 25 MHz pclk
     // =========================================================================
     logic sclk;               // 40 MHz system clock (from PLL outclk_0)
-    logic pclk_int;           // 25 MHz pixel clock  (from PLL outclk_1)
+    // NOTE: pclk_int (PLL outclk_1, 25 MHz) is a fixed output of the generated
+    // `pll` IP and must stay wired here, but it is intentionally unused — VGA/
+    // HDMI is clocked from `sclk` instead to eliminate a CDC (see u_vga_ctrl
+    // below). Left connected rather than floating so a Quartus IP resync
+    // doesn't silently drop the port; not a leftover from a prior design.
+    logic pclk_int;
     logic pll_locked;
     logic rst_n;
-    // Hold reset until PLL is locked so both sclk and pclk_int are stable.
+    // Hold reset until PLL is locked so sclk is stable.
     assign rst_n = ~i_reset & pll_locked;
 
     pll u_pll (
         .refclk   (i_clk),
         .rst      (1'b0),
         .outclk_0 (sclk),      // 40 MHz system clock
-        .outclk_1 (pclk_int),  // 25 MHz pixel clock
+        .outclk_1 (pclk_int),  // 25 MHz, unused — see NOTE above
         .locked   (pll_locked)
     );
 
@@ -90,6 +98,12 @@ module riscv_vpu_top_fpga #(
     logic [ 3:0] s_dmem_be;
     logic        s_dmem_re;
     logic [31:0] s_dmem_rdata;   // muxed: DMEM or UART
+    logic        s_dmem_stall;   // from dmem_arbiter: denied this cycle (VLSU priority)
+
+    // Downstream single memory port (dmem_arbiter -> dmem_qip_wrapper)
+    logic        dmem_re_p, dmem_we_p;
+    logic [31:0] dmem_addr_p, dmem_wdata_p, dmem_rdata_p;
+    logic [ 3:0] dmem_be_p;
 
     // Video read port wires (VGA controller → DMEM)
     logic [13:0] vid_addr;
@@ -211,6 +225,7 @@ module riscv_vpu_top_fpga #(
         .s_dmem_be_o     (s_dmem_be),
         .s_dmem_re_o     (s_dmem_re),
         .s_dmem_rdata_i  (s_dmem_rdata),
+        .s_dmem_stall_i  (s_dmem_stall),
         .vpu_ready_i     (vpu_ready),
         .vpu_cfg_done_i  (vpu_cfg_done),
         .vpu_vl_remain_i (vpu_vl_remain),
@@ -221,29 +236,49 @@ module riscv_vpu_top_fpga #(
     );
 
     // =========================================================================
-    // Data Memory — 4 × 8-bit Quartus M10K True Dual-Port (64 KB)
+    // Data Memory bus — single shared port, arbitrated (VLSU > scalar > video)
     // =========================================================================
+    dmem_arbiter #(
+        .ADDR_W(32), .DATA_W(32), .VID_AW(14)
+    ) u_dmem_arb (
+        .clk        (sclk),
+        .rst_n      (rst_n),
+        .m0_req_i   (vlsu_req),
+        .m0_we_i    (vlsu_we),
+        .m0_addr_i  (vlsu_addr),
+        .m0_be_i    (vlsu_be),
+        .m0_wdata_i (vlsu_wdata),
+        .m0_rdata_o (vlsu_rdata),
+        .m0_ready_o (vlsu_ready),
+        .m1_re_i    (dmem_re),
+        .m1_we_i    (dmem_we),
+        .m1_addr_i  (s_dmem_addr),
+        .m1_be_i    (s_dmem_be),
+        .m1_wdata_i (s_dmem_wdata),
+        .m1_rdata_o (dmem_rdata),
+        .m1_stall_o (s_dmem_stall),
+        .m2_addr_i  (vid_addr),
+        .m2_re_i    (vid_re),
+        .m2_rdata_o (vid_rdata),
+        .mem_re_o   (dmem_re_p),
+        .mem_we_o   (dmem_we_p),
+        .mem_addr_o (dmem_addr_p),
+        .mem_be_o   (dmem_be_p),
+        .mem_wdata_o(dmem_wdata_p),
+        .mem_rdata_i(dmem_rdata_p)
+    );
+
+    // 4 × 8-bit Quartus M10K single logical port (64 KB)
     dmem_qip_wrapper #(
         .DEPTH(16384)
     ) u_dmem (
-        .clk       (sclk),
-        .rst_n     (rst_n),
-        .s_addr    (s_dmem_addr),
-        .s_wdata   (s_dmem_wdata),
-        .s_we      (dmem_we),
-        .s_be      (s_dmem_be),
-        .s_re      (dmem_re),
-        .s_rdata   (dmem_rdata),
-        .vlsu_req  (vlsu_req),
-        .vlsu_we   (vlsu_we),
-        .vlsu_addr (vlsu_addr),
-        .vlsu_be   (vlsu_be),
-        .vlsu_wdata(vlsu_wdata),
-        .vlsu_rdata(vlsu_rdata),
-        .vlsu_ready(vlsu_ready),
-        .vid_addr  (vid_addr),
-        .vid_re    (vid_re),
-        .vid_rdata (vid_rdata)
+        .clk  (sclk),
+        .re   (dmem_re_p),
+        .we   (dmem_we_p),
+        .addr (dmem_addr_p),
+        .be   (dmem_be_p),
+        .wdata(dmem_wdata_p),
+        .rdata(dmem_rdata_p)
     );
 
     // =========================================================================

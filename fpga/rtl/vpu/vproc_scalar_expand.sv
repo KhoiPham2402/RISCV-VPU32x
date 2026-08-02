@@ -9,7 +9,7 @@ module vproc_scalar_expand (
     input  [2:0]  sew,
     output reg [31:0] data_out
 );
-    always @(*) begin
+    always_comb begin
         case (sew)
             3'd0: data_out = {data_in[7:0], data_in[7:0], data_in[7:0], data_in[7:0]};
             3'd1: data_out = {data_in[15:0], data_in[15:0]};

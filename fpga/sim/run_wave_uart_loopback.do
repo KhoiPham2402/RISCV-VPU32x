@@ -30,6 +30,7 @@ foreach f {
     vproc_fsm.sv vproc_fifo.sv vproc_vdecoder.sv
     vproc_vec_lsu.sv vproc_system_wrapper.sv
 } { vlog -sv $FPGA/rtl/vpu/$f }
+vlog -sv $FPGA/rtl/bus/dmem_arbiter.sv
 vlog -sv $FPGA/rtl/mem/dmem_qip_wrapper.sv
 vlog -sv $FPGA/rtl/hdmi/vga_timing.sv
 vlog -sv $FPGA/rtl/vga/vga_ctrl.sv

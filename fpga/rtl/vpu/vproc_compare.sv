@@ -29,7 +29,7 @@ module vproc_compare (
 
     assign cmp_result = cmp_result_r;
 
-    always @(*) begin
+    always_comb begin
         cmp_result_r = 4'b0000;
 
         case (sew)

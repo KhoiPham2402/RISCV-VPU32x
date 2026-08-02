@@ -54,6 +54,7 @@ foreach f {
 } { vlog -sv $FPGA/rtl/vpu/$f }
 
 # ── DMEM / VGA / Top ─────────────────────────────────────────────────────────
+vlog -sv $FPGA/rtl/bus/dmem_arbiter.sv
 vlog -sv $FPGA/rtl/mem/dmem_qip_wrapper.sv
 vlog -sv $FPGA/rtl/hdmi/vga_timing.sv
 vlog -sv $FPGA/rtl/vga/vga_ctrl.sv

@@ -36,6 +36,7 @@ foreach f {vproc_adder.sv vproc_mul.sv vproc_logic.sv vproc_shifter.sv
            vproc_vec_lsu.sv vproc_system_wrapper.sv} {
     vlog -quiet -sv -work work $FPGA/rtl/vpu/$f
 }
+vlog -quiet -sv -work work $FPGA/rtl/bus/dmem_arbiter.sv
 vlog -quiet -sv -work work $FPGA/rtl/mem/dmem_qip_wrapper.sv
 vlog -quiet -sv -work work $FPGA/rtl/hdmi/vga_timing.sv
 vlog -quiet -sv -work work $FPGA/rtl/vga/vga_ctrl.sv

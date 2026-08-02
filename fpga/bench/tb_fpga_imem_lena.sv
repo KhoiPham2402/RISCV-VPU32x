@@ -32,6 +32,7 @@ module tb_fpga_imem_lena;
     logic [31:0] s_addr, s_wdata, s_rdata;
     logic        s_we, s_re;
     logic [ 3:0] s_be;
+    logic        s_stall;
 
     // ─── VLSU DMEM bus (from vproc_system_wrapper) ──────────────────────────
     logic        vlsu_req, vlsu_we;
@@ -71,6 +72,7 @@ module tb_fpga_imem_lena;
         .s_dmem_be_o    (s_be),
         .s_dmem_re_o    (s_re),
         .s_dmem_rdata_i (s_rdata),
+        .s_dmem_stall_i (s_stall),
         // VPU interface
         .vpu_ready_i    (vpu_ready),
         .vpu_cfg_done_i (vpu_cfg_done),
@@ -121,40 +123,35 @@ module tb_fpga_imem_lena;
         .vlsu_busy_o      (vlsu_busy_o)
     );
 
-    // ─── Shared behavioral DMEM (64 KB, byte-addressed) ─────────────────────
-    // Same array, two ports: scalar (byte-enable write + registered read)
-    //                        VLSU   (word write + registered read, 1-cyc latency)
-    reg [31:0] dmem [0:16383];   // 16384 × 32-bit = 64 KB
+    // ─── Shared DMEM bus: single port, arbitrated (VLSU > scalar) ───────────
+    // Matches the real fpga/rtl/top/riscv_vpu_top_fpga.sv architecture (see
+    // fpga/rtl/bus/dmem_arbiter.sv) instead of an idealized dual-port model
+    // — real scalar/VLSU contention (and the retry/stall path it exercises
+    // in pipelined_vpu.sv) is actually exercised by this testbench.
+    logic        mem_re_p, mem_we_p;
+    logic [31:0] mem_addr_p, mem_wdata_p, mem_rdata_p;
+    logic [ 3:0] mem_be_p;
 
-    // Scalar port — byte-enable write, registered read
-    logic [31:0] s_rdata_r;
-    always @(posedge clk) begin
-        if (s_we) begin
-            if (s_be[0]) dmem[s_addr[15:2]][7:0]   <= s_wdata[7:0];
-            if (s_be[1]) dmem[s_addr[15:2]][15:8]  <= s_wdata[15:8];
-            if (s_be[2]) dmem[s_addr[15:2]][23:16] <= s_wdata[23:16];
-            if (s_be[3]) dmem[s_addr[15:2]][31:24] <= s_wdata[31:24];
-        end
-        if (s_re) s_rdata_r <= dmem[s_addr[15:2]];
-    end
-    assign s_rdata = s_rdata_r;
+    dmem_arbiter #(.ADDR_W(32), .DATA_W(32), .VID_AW(14)) u_dmem_arb (
+        .clk(clk), .rst_n(~reset),
+        .m0_req_i(vlsu_req), .m0_we_i(vlsu_we), .m0_addr_i(vlsu_addr),
+        .m0_be_i(vlsu_be),   .m0_wdata_i(vlsu_wdata),
+        .m0_rdata_o(vlsu_rdata), .m0_ready_o(vlsu_ready),
+        .m1_re_i(s_re), .m1_we_i(s_we), .m1_addr_i(s_addr),
+        .m1_be_i(s_be), .m1_wdata_i(s_wdata),
+        .m1_rdata_o(s_rdata), .m1_stall_o(s_stall),
+        .m2_addr_i(14'b0), .m2_re_i(1'b0), .m2_rdata_o(),
+        .mem_re_o(mem_re_p), .mem_we_o(mem_we_p), .mem_addr_o(mem_addr_p),
+        .mem_be_o(mem_be_p), .mem_wdata_o(mem_wdata_p), .mem_rdata_i(mem_rdata_p)
+    );
 
-    // VLSU port — word write, registered read, 1-cycle ready
-    logic vlsu_rd_pend;
-    always @(posedge clk) begin
-        vlsu_rd_pend <= vlsu_req & ~vlsu_we;
-        if (vlsu_req) begin
-            if (vlsu_we) begin
-                if (vlsu_be[0]) dmem[vlsu_addr[15:2]][7:0]   <= vlsu_wdata[7:0];
-                if (vlsu_be[1]) dmem[vlsu_addr[15:2]][15:8]  <= vlsu_wdata[15:8];
-                if (vlsu_be[2]) dmem[vlsu_addr[15:2]][23:16] <= vlsu_wdata[23:16];
-                if (vlsu_be[3]) dmem[vlsu_addr[15:2]][31:24] <= vlsu_wdata[31:24];
-            end else begin
-                vlsu_rdata <= dmem[vlsu_addr[15:2]];
-            end
-        end
-    end
-    assign vlsu_ready = vlsu_we ? vlsu_req : vlsu_rd_pend;
+    dmem_model_sp #(.DEPTH(16384)) u_dmem (
+        .clk(clk), .re(mem_re_p), .we(mem_we_p), .addr(mem_addr_p),
+        .be(mem_be_p), .wdata(mem_wdata_p), .rdata(mem_rdata_p)
+    );
+
+    integer n_arb_conflict;
+    always @(posedge clk) if (s_stall) n_arb_conflict++;
 
     // ─── VPU instruction name (for waveform) ────────────────────────────────
     string vpu_instr_name;
@@ -198,6 +195,7 @@ module tb_fpga_imem_lena;
 
     initial begin
         reset = 1'b1;
+        n_arb_conflict = 0;
         repeat(4) @(posedge clk);
         reset = 1'b0;
         @(negedge clk);
@@ -210,11 +208,11 @@ module tb_fpga_imem_lena;
         $readmemh(IMEM_FILE, u_core.u_imem.u_b3.mem_sim);
 
         // Backdoor-load DMEM with RGB pixel planes
-        $readmemh(DMEM_INIT, dmem);
+        $readmemh(DMEM_INIT, u_dmem.mem);
 
         $display("[TB] IMEM loaded from %s", IMEM_FILE);
         $display("[TB] DMEM loaded. R[0]=%02h  G[0]=%02h  B[0]=%02h",
-            dmem[0][7:0], dmem[4096][7:0], dmem[8192][7:0]);
+            u_dmem.mem[0][7:0], u_dmem.mem[4096][7:0], u_dmem.mem[8192][7:0]);
 
         // ── Run until firmware hits infinite loop (j done = 0x0000006f) ──
         jdone_cnt   = 0;
@@ -243,12 +241,13 @@ module tb_fpga_imem_lena;
 
         // ── Print first 16 Y pixels ──────────────────────────────────────
         $display("Y[0..3]  = %02h %02h %02h %02h",
-            dmem[12288][7:0],  dmem[12288][15:8],
-            dmem[12288][23:16],dmem[12288][31:24]);
+            u_dmem.mem[12288][7:0],  u_dmem.mem[12288][15:8],
+            u_dmem.mem[12288][23:16],u_dmem.mem[12288][31:24]);
         $display("Y[4..7]  = %02h %02h %02h %02h",
-            dmem[12289][7:0],  dmem[12289][15:8],
-            dmem[12289][23:16],dmem[12289][31:24]);
+            u_dmem.mem[12289][7:0],  u_dmem.mem[12289][15:8],
+            u_dmem.mem[12289][23:16],u_dmem.mem[12289][31:24]);
         $display("Cycles: %0d", cycle_cnt);
+        $display("Arbitration conflicts (scalar denied): %0d cycles", n_arb_conflict);
         $stop;
     end
 

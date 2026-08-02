@@ -1,9 +1,9 @@
-// Vector instruction decoder – đồng bộ syntax với các module vproc_* (wire/reg, always @(*))
+// Vector instruction decoder – đồng bộ syntax với các module vproc_* (wire/reg, always_comb)
 // - Lệnh config: opcode = OP-V (0x57) và funct3 = 3'b111 (vsetvl / vsetvli).
 // - Output gói gọn trong 1 tín hiệu đa bit ctrl_bus làm input cho FIFO phía sau.
 // - Đồng thời giải mã và đưa ra trường vtype encoded (từ immediate của lệnh config).
 //
-// Mặc định CTRL_WIDTH = 48 để chứa đầy đủ vtype[7:0] + control:
+// Mặc định CTRL_WIDTH = 49 để chứa đầy đủ vtype[7:0] + control + cfg_is_vsetivli[48]:
 // Layout ctrl_bus (LSB first):
 //   [4:0]    vs1_addr
 //   [9:5]    vs2_addr
@@ -29,10 +29,11 @@
 //   [45]     minmax_is_min  (1=min, 0=max)
 //   [46]     minmax_is_unsign (1=unsigned, 0=signed)
 //   [47]     is_reduction    (vred*)
+//   [48]     cfg_is_vsetivli (1 nếu AVL là uimm5 = vs1_addr[4:0], không phải rs1_data)
 
 module vproc_vdecoder #(
     parameter BASE_ADDR  = 5,
-    parameter CTRL_WIDTH = 48
+    parameter CTRL_WIDTH = 49
 ) (
     input  [31:0] instruction,
     input  [31:0] rs2_data,   // dữ liệu scalar rs2 (dùng cho vsetvl đọc vtype từ rs2, nếu cần ở block sau)
@@ -128,59 +129,59 @@ module vproc_vdecoder #(
     reg minmax_is_unsign;
     reg is_reduction;
 
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VADDW, VADDWU, VSUBW, VSUBWU, VMULWU, VMULW, VMULWSU: is_widen = 1'b1;
             default:                      is_widen = 1'b0;
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VSUB, VRSUB, VSUBW, VSUBWU, VSBC, VMSBC: is_subtraction = 1'b1;
             default:                                 is_subtraction = 1'b0;
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         is_reverse_sub = (funct6 == VRSUB);
     end
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VMINU, VMIN: minmax_is_min = is_vector && !is_config;
             VMAXU, VMAX: minmax_is_min = 1'b0;
             default:     minmax_is_min = 1'b0;
         endcase
     end
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VMINU, VMAXU: minmax_is_unsign = is_vector && !is_config;
             VMIN, VMAX:   minmax_is_unsign = 1'b0;
             default:      minmax_is_unsign = 1'b0;
         endcase
     end
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VADDWU, VSUBWU, VMULHU, VMULWU: is_unsigned_vs1 = 1'b1;  // vwmulu: vs1 unsigned
             default:                        is_unsigned_vs1 = 1'b0;
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VADDWU, VSUBWU, VMULHU, VMULHSU, VMULWU: is_unsigned_vs2 = 1'b1;  // vwmulu/vwmulsu: vs2 unsigned
             default:                                         is_unsigned_vs2 = 1'b0;
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VMULH, VMULHU, VMULHSU: is_mulh = 1'b1;
             default:                is_mulh = 1'b0;
         endcase
     end
     // Nhóm add/sub có carry-in từ mask register: vadc / vsbc.
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VADC, VSBC: is_carry = is_vector && !is_config && (vm_bit == 1'b0) && (funct3 != 3'b011);
             default:    is_carry = 1'b0;
@@ -188,7 +189,7 @@ module vproc_vdecoder #(
     end
 
     // Nhóm xuất mask carry/borrow: vmadc / vmsbc.
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VMADC, VMSBC: is_mask_carry = is_vector && !is_config && (vm_bit == 1'b0) && (funct3 != 3'b011);
             default:      is_mask_carry = 1'b0;
@@ -197,7 +198,7 @@ module vproc_vdecoder #(
     // Nhóm lệnh tạo mask (ghi kết quả dạng mask):
     // - compare mask: vmseq/vmslt/vmsltu (map vào VCMPEQ/VCMPLT/VCMPLTU)
     // - carry/borrow mask: vmadc/vmsbc
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VCMPEQ, VCMPLT, VCMPLTU: is_masking = is_vector && !is_config;
             VMADC, VMSBC:            is_masking = is_vector && !is_config && (vm_bit == 1'b0) && (funct3 != 3'b011);
@@ -205,7 +206,7 @@ module vproc_vdecoder #(
         endcase
     end
     // Lệnh có commit pha cuối từ mask buffer.
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VCMPEQ, VCMPLT, VCMPLTU: is_final_masking = is_vector && !is_config;
             VMADC, VMSBC:            is_final_masking = is_vector && !is_config && (vm_bit == 1'b0) && (funct3 != 3'b011);
@@ -214,7 +215,7 @@ module vproc_vdecoder #(
     end
     // RVV 1.0 §14.1: reductions use funct3=010 (OPMVV) + funct6[5:3]=000.
     // Cannot use case(funct6) because funct6=000000 collides with VADD (OPIVV).
-    always @(*) begin
+    always_comb begin
         is_reduction = is_vector && !is_config && (funct3 == 3'b010) && (funct6[5:3] == 3'b000);
     end
     wire is_immediate    = (funct3 == 3'b011);

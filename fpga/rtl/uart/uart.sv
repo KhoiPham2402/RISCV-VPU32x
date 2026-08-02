@@ -3,7 +3,10 @@
 //
 // Register map (byte address offset from slave base 0xFF00_0000):
 //   0x00  RW  CTRL  [0]=TX_EN, [1]=RX_EN
-//   0x04  RO  STAT  [0]=TX_BUSY, [1]=RX_VALID (RX FIFO non-empty)
+//   0x04  RO  STAT  [0]=TX_BUSY, [1]=RX_VALID (RX FIFO non-empty),
+//                    [2]=RX_OVERFLOW (sticky, byte dropped because RX FIFO was full),
+//                    [3]=TX_OVERFLOW (sticky, write to TXDAT dropped because TX FIFO was full)
+//                    (overflow bits are sticky until reset — read-only diagnostic, not W1C)
 //   0x08  WO  TXDAT [7:0] = byte to transmit (triggers transmission)
 //   0x0C  RO  RXDAT [7:0] = next byte from RX FIFO (dequeued on read)
 //   0x10  RW  BAUD  baud rate divisor = clk_freq / (16 * baud_rate) - 1
@@ -39,6 +42,8 @@ module uart #(
     logic        ctrl_tx_en;
     logic        ctrl_rx_en;
     logic [15:0] baud_div;    // configurable baud divisor
+    logic        rx_overflow_r; // sticky: RX byte dropped, RX FIFO was full
+    logic        tx_overflow_r; // sticky: TXDAT write dropped, TX FIFO was full
 
     // ─────────────────────────────────────────────────────────────────────────
     // FIFO (8-entry × 8-bit, power-of-2 pointers)
@@ -130,6 +135,7 @@ module uart #(
             rx_active   <= 1'b0;
             rx_wptr     <= '0;
             rx_rptr     <= '0;
+            rx_overflow_r <= 1'b0;
         end else begin
             rx_sync0 <= uart_rx;
             rx_sync1 <= rx_sync0;
@@ -152,6 +158,8 @@ module uart #(
                         if (rx_sync1 && !rx_full) begin
                             rx_fifo[rx_wptr[2:0]] <= rx_shift;
                             rx_wptr <= rx_wptr + 3'd1;
+                        end else if (rx_sync1 && rx_full) begin
+                            rx_overflow_r <= 1'b1;  // byte dropped, FIFO was full
                         end
                         rx_active <= 1'b0;
                     end
@@ -176,7 +184,7 @@ module uart #(
         rd_data = 32'd0;
         case (reg_off)
             8'h00: rd_data = {30'd0, ctrl_rx_en, ctrl_tx_en};
-            8'h04: rd_data = {30'd0, !rx_empty, tx_busy};
+            8'h04: rd_data = {28'd0, tx_overflow_r, rx_overflow_r, !rx_empty, tx_busy};
             8'h0C: rd_data = rx_empty ? 32'hFFFF_FFFF : {24'd0, rx_fifo[rx_rptr[2:0]]};
             8'h10: rd_data = {16'd0, baud_div};
             default: rd_data = 32'd0;
@@ -207,6 +215,7 @@ module uart #(
             ctrl_rx_en <= 1'b1;
             baud_div   <= DEFAULT_DIV[15:0];
             tx_wptr    <= '0;
+            tx_overflow_r <= 1'b0;
         end else begin
             if (tl_write) begin
                 case (reg_off)
@@ -215,6 +224,8 @@ module uart #(
                         if (!tx_full) begin
                             tx_fifo[tx_wptr[2:0]] <= tl_a.data[7:0];
                             tx_wptr <= tx_wptr + 3'd1;
+                        end else begin
+                            tx_overflow_r <= 1'b1;  // write dropped, FIFO was full
                         end
                     end
                     8'h10: baud_div <= tl_a.data[15:0];

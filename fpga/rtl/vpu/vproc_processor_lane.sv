@@ -79,7 +79,7 @@ module vproc_processor_lane (
     wire cmp_is_unsign = (funct6 == VCMPLTU);
     // ===== Operand B mux (đường logic / mul / shift; adder dùng thêm reverse_sub) =====
     reg [31:0] op_b;
-    always @(*) begin
+    always_comb begin
         if (use_rs1)
             op_b = rs1_data;
         else if (use_imm)
@@ -92,7 +92,7 @@ module vproc_processor_lane (
     // reverse_sub: vrsub — đảo minuend/subtrahend (vs1-rs2, imm-rs2, rs1-rs2)
     reg [31:0] add_op_a;
     reg [31:0] add_op_b;
-    always @(*) begin
+    always_comb begin
         if (reverse_sub) begin
             if (use_rs1) begin
                 add_op_a = rs1_data;
@@ -204,7 +204,7 @@ module vproc_processor_lane (
 
     // ===== Mux kết quả trước mask theo funct6 =====
     reg [31:0] wb_unmasked;
-    always @(*) begin
+    always_comb begin
         case (funct6)
             VADD, VADDW, VADDWU:                wb_unmasked = result_addsub;
             VSUB, VRSUB, VSUBW, VSUBWU:         wb_unmasked = result_addsub;
@@ -229,7 +229,7 @@ module vproc_processor_lane (
     //   sew=1 (16b): dùng vmask[1:0] cho 2 halfword
     //   sew=2 (32b): dùng vmask[0]
     reg [31:0] lane_mask_32;
-    always @(*) begin
+    always_comb begin
         case (sew)
             3'd0:   lane_mask_32 = {{8{vmask[3]}}, {8{vmask[2]}}, {8{vmask[1]}}, {8{vmask[0]}}};
             3'd1:   lane_mask_32 = {{16{vmask[1]}}, {16{vmask[0]}}};
@@ -238,7 +238,7 @@ module vproc_processor_lane (
         endcase
     end
 
-    always @(*) begin
+    always_comb begin
         wb_result = wb_unmasked & lane_mask_32;
     end
 

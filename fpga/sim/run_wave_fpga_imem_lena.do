@@ -49,6 +49,8 @@ foreach f {
 }
 
 # ── Testbench ─────────────────────────────────────────────────────────────────
+vlog -sv $RTL/bus/dmem_arbiter.sv
+vlog -sv $BENCH/dmem_model_sp.sv
 vlog -sv $BENCH/tb_fpga_imem_lena.sv
 
 vsim -t 1ps -voptargs=+acc work.tb_fpga_imem_lena

@@ -42,7 +42,7 @@ module vproc_compare_combine (
     reg [15:0] cmp_eq_out_r;
     assign cmp_eq_out = cmp_eq_out_r;
 
-    always @(*) begin
+    always_comb begin
         // mặc định
         cmp_eq_out_r = 16'b0;
 
